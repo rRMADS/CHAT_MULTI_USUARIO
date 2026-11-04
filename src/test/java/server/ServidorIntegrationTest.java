@@ -10,6 +10,9 @@ import java.time.Clock;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
+import model.Sala;
 import static org.junit.jupiter.api.Assertions.*;
 import static protocol.Evento.Tipo.*;
 
@@ -62,6 +65,27 @@ class ServidorIntegrationTest {
             }
         }
     }
+    @Test void trocaDeSalaNaMesmaConexaoIsolaMensagensEHistorico() throws Exception {
+        var factory = new ConnectionFactory("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "");
+        new JdbcMensagemRepository(factory).inicializar(); Map<Sala, ChatService> salas = new LinkedHashMap<>();
+        for (var sala : List.of(Sala.GERAL, new Sala("estudos", "Estudos"))) {
+            salas.put(sala, new ChatService(new JdbcMensagemRepository(factory, sala), new ClientRegistry(), Clock.systemUTC(), 50, sala));
+        }
+        try (var servidor = new Servidor("127.0.0.1", 0, 20, new SalaService(salas))) {
+            servidor.iniciar();
+            try (var ana = new Cliente(servidor, "Ana Silva"); var bruno = new Cliente(servidor, "Bruno")) {
+                ana.enviar("Mensagem da Geral"); ana.ate(MENSAGEM); bruno.ate(MENSAGEM);
+                assertEquals("estudos", ana.entrarSala("estudos").campo(1)); assertTrue(ana.historico.isEmpty());
+                ana.enviar("Mensagem dos Estudos"); ana.ate(MENSAGEM);
+                bruno.enviar("/ping"); Evento e;
+                do { e = bruno.ler(); assertNotEquals(MENSAGEM, e.tipo()); } while (e.tipo() != PONG);
+                assertEquals("estudos", bruno.entrarSala("estudos").campo(1));
+                assertEquals(List.of("Mensagem dos Estudos"), bruno.historico.stream().map(m -> m.campo(2)).toList());
+                bruno.enviar("Agora estamos juntos"); assertEquals("Agora estamos juntos", ana.ate(MENSAGEM).campo(2)); bruno.ate(MENSAGEM);
+                ana.entrarSala("geral"); assertEquals(List.of("Mensagem da Geral"), ana.historico.stream().map(m -> m.campo(2)).toList());
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
         final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
         Cliente(Servidor s, String nome) throws IOException {
@@ -74,6 +98,11 @@ class ServidorIntegrationTest {
         Evento ler() throws IOException { String linha = reader.readLine(); if (linha == null) throw new EOFException(); return Protocolo.decodificar(linha); }
         Evento ate(Evento.Tipo tipo) throws IOException { for (int i = 0; i < 500; i++) { var e = ler(); if (e.tipo() == tipo) return e; } throw new IOException("Evento não recebido: " + tipo); }
         void enviar(String texto) { writer.println(texto); }
+        Evento entrarSala(String id) throws IOException {
+            enviar("/join " + id); var entrada = ate(BEM_VINDO); historico.clear();
+            Evento e; do { e = ler(); if (e.tipo() == MENSAGEM) historico.add(e); } while (e.tipo() != HISTORICO_FIM);
+            return entrada;
+        }
         @Override public void close() throws IOException { socket.close(); }
     }
 }

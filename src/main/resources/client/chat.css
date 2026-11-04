@@ -72,6 +72,10 @@
 .counter { -fx-text-fill: #8b9783; -fx-font-size: 10px; }
 .combo-box { -fx-background-color: #edf3e7; -fx-background-radius: 10; -fx-padding: 5 2; -fx-font-size: 11px; }
 .combo-box .list-cell { -fx-text-fill: #4e714d; }
+.room-picker { -fx-background-color: #d5eab91e; -fx-border-color: #afcca445; -fx-border-radius: 10; -fx-padding: 8 3; }
+.room-picker > .list-cell { -fx-text-fill: #e0efca; -fx-font-size: 12px; }
+.room-picker > .arrow-button > .arrow { -fx-background-color: #b3cca5; }
+.room-picker .list-view .list-cell { -fx-text-fill: #345741; }
 .new-messages { -fx-background-color: #346e4e; -fx-text-fill: #ffffff; -fx-background-radius: 24; -fx-font-size: 11px; -fx-padding: 11 16; -fx-effect: dropshadow(gaussian, #31563c30, 16, .1, 0, 4); }
 .scroll-bar { -fx-background-color: transparent; -fx-pref-width: 8; }
 .scroll-bar .thumb { -fx-background-color: #bdcbb4; -fx-background-radius: 6; }

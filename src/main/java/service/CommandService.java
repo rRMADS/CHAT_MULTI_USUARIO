@@ -11,7 +11,7 @@ public final class CommandService {
     public CommandService(ChatService chat) {
         this.chat = chat;
         comandos = Map.of(
-            "/help", (c, a) -> c.enviar(Evento.de(SISTEMA, "/users · /history [1–200] · /buscar texto · /msg \"Nome com espaços\" texto · /quit")),
+            "/help", (c, a) -> c.enviar(Evento.de(SISTEMA, "/salas · /join sala · /users · /history [1–200] · /buscar texto · /msg \"Nome com espaços\" texto · /quit")),
             "/users", (c, a) -> chat.publicarUsuarios(),
             "/history", (c, a) -> chat.buscarHistorico(c, a.isBlank() ? 50 : Integer.parseInt(a)),
             "/buscar", chat::buscarTexto,

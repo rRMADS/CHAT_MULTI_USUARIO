@@ -2,6 +2,7 @@ package service;
 
 import model.Mensagem;
 import model.Usuario;
+import model.Sala;
 import persistence.MensagemRepository;
 import protocol.Evento;
 import static protocol.Evento.Tipo.*;
@@ -15,15 +16,20 @@ public final class ChatService {
     private final ClientRegistry registry;
     private final Clock clock;
     private final int tamanhoHistorico;
+    private final Sala sala;
     public ChatService(MensagemRepository repository, ClientRegistry registry, Clock clock, int tamanhoHistorico) {
+        this(repository, registry, clock, tamanhoHistorico, Sala.GERAL);
+    }
+    public ChatService(MensagemRepository repository, ClientRegistry registry, Clock clock, int tamanhoHistorico, Sala sala) {
         this.repository = repository; this.registry = registry; this.clock = clock; this.tamanhoHistorico = tamanhoHistorico;
+        this.sala = sala;
     }
     // O mesmo lock ordena histórico inicial, persistência e publicação. enviar() apenas enfileira, sem I/O.
     public synchronized void conectar(ConexaoCliente cliente) {
         var ultimas = repository.buscarUltimas(tamanhoHistorico);
         registry.adicionar(cliente);
         try {
-            cliente.enviar(Evento.de(BEM_VINDO, cliente.getUsuario().nome()));
+            cliente.enviar(Evento.de(BEM_VINDO, cliente.getUsuario().nome(), sala.id(), sala.nome()));
             historico(cliente, ultimas, "Últimas mensagens");
             broadcast(Evento.de(SISTEMA, cliente.getUsuario().nome() + " entrou no chat."));
             publicarUsuarios();
@@ -68,6 +74,7 @@ public final class ChatService {
     public synchronized void publicarUsuarios() {
         broadcast(new Evento(USUARIOS, registry.snapshot().stream().map(c -> c.getUsuario().nome()).sorted(String.CASE_INSENSITIVE_ORDER).toList()));
     }
+    public int quantidadeUsuarios() { return registry.quantidade(); }
     public synchronized void digitando(ConexaoCliente origem) {
         boolean houveFalha = false;
         for (var c : registry.snapshot()) if (c != origem) {

@@ -15,15 +15,14 @@ import static protocol.Evento.Tipo.*;
 
 public final class ClienteHandler implements Runnable, ConexaoCliente {
     private final Socket socket;
-    private final ChatService chat;
-    private final CommandService comandos;
+    private final SalaService salas;
     private final ArrayBlockingQueue<Evento> saida = new ArrayBlockingQueue<>(256);
     private volatile boolean ativo = true;
     private Usuario usuario;
     private volatile boolean encerrarAposErro;
     private final CountDownLatch erroEntregue = new CountDownLatch(1);
-    public ClienteHandler(Socket socket, ChatService chat, CommandService comandos) {
-        this.socket = socket; this.chat = chat; this.comandos = comandos;
+    public ClienteHandler(Socket socket, SalaService salas) {
+        this.socket = socket; this.salas = salas;
     }
     @Override public Usuario getUsuario() { return usuario; }
     @Override public void run() {
@@ -34,7 +33,7 @@ public final class ClienteHandler implements Runnable, ConexaoCliente {
             socket.setSoTimeout(10_000);
             String nome = lerLinhaLimitada(leitor, 30);
             if (nome == null) return;
-            usuario = new Usuario(nome); chat.conectar(this);
+            usuario = new Usuario(nome); salas.conectar(this);
             socket.setSoTimeout(90_000);
             long ultimaDigitacao = 0;
             while (ativo) {
@@ -44,7 +43,7 @@ public final class ClienteHandler implements Runnable, ConexaoCliente {
                     if (agora - ultimaDigitacao < 1_000_000_000L) continue;
                     ultimaDigitacao = agora;
                 }
-                try { comandos.executar(this, linha); }
+                try { salas.executar(this, linha); }
                 catch (IllegalArgumentException | PersistenciaException e) { enviar(Evento.de(ERRO, e.getMessage())); }
             }
         } catch (IllegalArgumentException | PersistenciaException e) {
@@ -53,7 +52,7 @@ public final class ClienteHandler implements Runnable, ConexaoCliente {
         } catch (IOException | RuntimeException e) {
             if (ativo) System.err.println("Conexão encerrada (" + (usuario == null ? "sem apelido" : usuario) + "): " + e.getMessage());
         } finally {
-            chat.desconectar(this); fechar(); writer.interrupt();
+            salas.desconectar(this); fechar(); writer.interrupt();
         }
     }
     public static String lerLinhaLimitada(Reader leitor, int limite) throws IOException {

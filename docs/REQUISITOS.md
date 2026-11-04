@@ -46,4 +46,4 @@ As versões são fixadas em `pom.xml`; não há atualização automática para a
 
 O protocolo é UTF-8, uma linha por envio. O primeiro envio é o apelido. Os eventos de resposta têm tipo explícito e campos em Base64, que preserva separadores e acentos, mas não criptografa os dados. Mensagens de sistema e digitação não são persistidas. Privadas também não são persistidas, para impedir que um histórico público exponha seu conteúdo.
 
-Apelidos únicos valem durante a conexão; não reservam identidade entre sessões. Salas independentes, autenticação, TLS, transferência de arquivos, reconexão automática e confirmações de leitura são evoluções futuras. Não é uma versão destinada à exposição pública na internet.
+Apelidos únicos valem dentro de cada sala durante a conexão; não reservam identidade entre sessões. As salas independentes são implementadas no mesmo IP e porta, com histórico e participantes separados, e são configuradas em server.rooms. Autenticação, TLS, transferência de arquivos, reconexão automática e confirmações de leitura são evoluções futuras. Não é uma versão destinada à exposição pública na internet.

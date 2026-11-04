@@ -9,7 +9,8 @@ flowchart LR
     UI[ClienteChat JavaFX] --> REDE[ConexaoChat]
     REDE -->|TCP UTF-8| HANDLER[ClienteHandler]
     SERVIDOR[Servidor e accept] --> HANDLER
-    HANDLER --> CMD[CommandService]
+    HANDLER --> SALAS[SalaService]
+    SALAS --> CMD[CommandService por sala]
     CMD --> CHAT[ChatService]
     CHAT --> REG[ClientRegistry]
     CHAT --> REPO[MensagemRepository]
@@ -23,13 +24,17 @@ flowchart LR
 | `model` | Usuário e mensagem imutáveis, validações e formatação |
 | `persistence` | Contrato do histórico e exceção independente de JDBC |
 | `persistence.jdbc` | SQL, conexões por operação e tradução de erros |
-| `service` | Regras, comandos, participantes, publicação e mensagens privadas |
+| `service` | Coordenação de salas, regras, comandos, participantes, publicação e mensagens privadas |
 | `server` | Escuta TCP, handshake, leitura limitada e filas de saída |
 | `protocol` | Tipos de evento e codificação compartilhada, sem sockets ou SQL |
 | `client` | Conexão do cliente e interface JavaFX |
 | `config` | Configuração externa com valores padrão |
 
 `Servidor.main` monta as implementações e injeta as dependências. O cliente não conhece os serviços ou o banco. Serviços não importam `java.net` ou `java.sql`. O protocolo tem pacote próprio porque é compartilhado pelos dois lados. Essa é uma adaptação deliberada da sugestão de manter Protocolo em server no DOCX.
+
+`SalaService` coordena as conversas no mesmo socket de escuta. O padrão é Geral, Estudos, Projetos, Café e Livre; `server.rooms` permite configurar de 1 a 20 salas. Cada sala possui seu próprio `ChatService`, `ClientRegistry`, `CommandService` e repository JDBC com filtro fixo de sala. O IP e a porta são compartilhados; o identificador de sala define a conversa. Não há criação de IPs adicionais nem varredura da rede.
+
+`Config` lê `chat.properties` em UTF-8, aceita BOM e valida identificadores únicos, limites e a presença do identificador inicial `geral`. Alterar apenas o nome exibido preserva a associação ao histórico. Retirar uma sala da configuração não apaga suas mensagens; reintroduzir o mesmo identificador recupera o conteúdo. A configuração é aplicada ao reiniciar o servidor.
 
 A apresentação visual usa `client.Animacoes` para transições entre telas, movimentos discretos da ilustração, resposta dos botões e entrada das mensagens. As animações permanecem sempre ativas e rodam na thread do JavaFX. Efeitos contínuos são interrompidos ao sair ou trocar de tela. Histórico aparece em conjunto; novas mensagens entram individualmente. A rolagem suave respeita a leitura de mensagens antigas e oferece um atalho para voltar às novas mensagens. Se um destinatário privado sair, a seleção permanece privada e avisa que a pessoa está offline, em vez de trocar automaticamente para envio público.
 
@@ -50,6 +55,7 @@ O remetente recebe o evento persistido do próprio servidor, evitando desenhar u
 | Recurso | Proteção e justificativa |
 | --- | --- |
 | Lista de clientes | Métodos sincronizados no registry; snapshot imutável para publicação |
+| Sala de cada conexão | Mapa protegido pelo lock do SalaService; movimentos e roteamento são serializados |
 | Reserva do apelido | Verificação e inclusão no mesmo lock, evitando duas entradas com o mesmo nome |
 | Gravação e publicação | Métodos sincronizados no ChatService, mantendo uma ordem única |
 | Histórico inicial e novas mensagens | Mesmo lock do serviço; histórico enfileirado antes de novas mensagens para a conexão |
@@ -59,6 +65,8 @@ O remetente recebe o evento persistido do próprio servidor, evitando desenhar u
 | Encerramento do cliente gráfico | AtomicBoolean permite fechar uma vez e descartar callbacks de sessões anteriores |
 
 A sincronização do serviço serializa o acesso ao banco: uma operação lenta de persistência atrasa novos envios e entradas. Essa escolha simplifica a demonstração de ordenação no trabalho. A publicação apenas enfileira eventos, sem esperar I/O de socket, então um cliente lento não mantém esse lock preso. Se a fila encher, somente esse cliente é desconectado e poderá recuperar o histórico público ao retornar.
+
+A coordenação de salas também usa uma seção crítica única para rotear mensagens e mover participantes. Isso evita que uma mensagem entre na sala errada durante a troca, com o custo de serializar as operações das salas. Uma gravação lenta pode atrasar as demais salas nesta versão. A entrada no destino é concluída antes da remoção da origem; se a leitura do histórico ou o apelido no destino falhar, a sala atual é preservada. A conexão TCP e sua thread leitora continuam as mesmas.
 
 Cada conexão possui uma thread leitora `ClienteHandler` e uma thread escritora auxiliar. O requisito de uma thread dedicada por conexão permanece atendido; a auxiliar evita que a escrita de um cliente lento trave os demais. Ambas são finalizadas quando o socket fecha. O servidor mantém uma thread adicional para `accept`.
 
@@ -76,6 +84,8 @@ O encerramento do servidor fecha a escuta e os sockets ativos. A gravação de c
 
 H2 fica em `data/chat.mv.db`. A tabela `mensagem` contém ID sequencial, remetente, conteúdo e horário atribuído pelo servidor. O script usa identity e índice temporal. Buscas ordenam por ID, selecionam as últimas N e devolvem ordem cronológica. Os parâmetros usam `PreparedStatement`; o script fixo de criação usa `Statement` porque não recebe entrada do usuário.
 
+A coluna `sala` delimita o histórico e a busca. O ID permanece sequencial no banco inteiro, podendo ter intervalos no histórico de uma sala. A migração idempotente adiciona essa coluna a bancos antigos com valor padrão `geral`, preservando as mensagens existentes. Todas as consultas de conteúdo incluem o filtro da sala; há índice composto `(sala, id)`.
+
 A busca textual usa `LOCATE` com parâmetro; %, _ e aspas são literais. Avisos e digitação não ficam no banco. Privadas passam somente entre origem e destino conectados e não aparecem no histórico. A base não implementa contas, reserva persistente de apelidos ou criptografia TCP.
 
 ## Validação
@@ -83,3 +93,5 @@ A busca textual usa `LOCATE` com parâmetro; %, _ e aspas são literais. Avisos 
 Os testes de domínio, serviço e protocolo não abrem rede nem banco real. O serviço recebe repository em memória e conexões falsas. Há testes concorrentes com latch e futures para apelido único e 60 envios preservando ordem. Falha de banco não publica; falha de destinatário não interrompe os demais.
 
 Testes de integração cobrem H2, reabertura do arquivo, busca literal e servidor real em porta aleatória com três clientes. A interface é conferida separadamente em execução; isso não substitui futuros testes automatizados de acessibilidade e interação.
+
+A suíte também cobre isolamento entre salas, troca na mesma conexão, contagens do catálogo, apelido ocupado no destino, movimentação concorrente com envios e migração de um banco sem a coluna de sala. O protocolo envia `SALAS` com a sala atual e as opções/contagens; `BEM_VINDO` informa a sala de entrada para a interface reconstruir a conversa e descartar a visualização anterior.

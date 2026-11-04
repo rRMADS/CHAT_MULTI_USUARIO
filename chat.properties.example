@@ -1,6 +1,8 @@
 server.bind=0.0.0.0
 server.port=5050
 server.maxClients=100
+# Salas: identificador:nome, separadas por ponto e virgula. Mantenha o ID geral.
+server.rooms=geral:Geral;estudos:Estudos;projetos:Projetos;cafe:Café;livre:Livre
 db.url=jdbc:h2:./data/chat
 db.user=sa
 db.password=

@@ -2,6 +2,7 @@ package persistence.jdbc;
 
 import model.Mensagem;
 import model.Usuario;
+import model.Sala;
 import persistence.MensagemRepository;
 import persistence.PersistenciaException;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +14,9 @@ import java.util.List;
 
 public final class JdbcMensagemRepository implements MensagemRepository {
     private final ConnectionFactory factory;
-    public JdbcMensagemRepository(ConnectionFactory factory) { this.factory = factory; }
+    private final Sala sala;
+    public JdbcMensagemRepository(ConnectionFactory factory) { this(factory, Sala.GERAL); }
+    public JdbcMensagemRepository(ConnectionFactory factory, Sala sala) { this.factory = factory; this.sala = sala; }
     public void inicializar() {
         try (var input = getClass().getResourceAsStream("/schema.sql"); var c = factory.abrir()) {
             if (input == null) throw new IOException("schema.sql não encontrado");
@@ -25,9 +28,9 @@ public final class JdbcMensagemRepository implements MensagemRepository {
     }
     @Override public Mensagem salvar(Mensagem mensagem) {
         try (var c = factory.abrir(); var s = c.prepareStatement(
-                "INSERT INTO mensagem(remetente, conteudo, horario) VALUES (?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO mensagem(remetente, conteudo, horario, sala) VALUES (?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
             s.setString(1, mensagem.remetente().nome()); s.setString(2, mensagem.conteudo());
-            s.setTimestamp(3, Timestamp.valueOf(mensagem.horario())); s.executeUpdate();
+            s.setTimestamp(3, Timestamp.valueOf(mensagem.horario())); s.setString(4, sala.id()); s.executeUpdate();
             try (var keys = s.getGeneratedKeys()) {
                 if (!keys.next()) throw new SQLException("ID não retornado");
                 return mensagem.comId(keys.getLong(1));
@@ -39,10 +42,10 @@ public final class JdbcMensagemRepository implements MensagemRepository {
     private List<Mensagem> consultar(String texto, int quantidade) {
         if (quantidade < 1 || quantidade > 200) throw new IllegalArgumentException("Histórico: escolha de 1 a 200 mensagens.");
         // LOCATE trata %, _ e aspas como texto literal, sem interpolação de SQL.
-        String sql = texto == null ? "SELECT * FROM mensagem ORDER BY id DESC LIMIT ?"
-                : "SELECT * FROM mensagem WHERE LOCATE(LOWER(?), LOWER(conteudo)) > 0 ORDER BY id DESC LIMIT ?";
+        String sql = texto == null ? "SELECT * FROM mensagem WHERE sala = ? ORDER BY id DESC LIMIT ?"
+                : "SELECT * FROM mensagem WHERE sala = ? AND LOCATE(LOWER(?), LOWER(conteudo)) > 0 ORDER BY id DESC LIMIT ?";
         try (var c = factory.abrir(); var s = c.prepareStatement(sql)) {
-            int index = 1;
+            s.setString(1, sala.id()); int index = 2;
             if (texto != null) s.setString(index++, texto);
             s.setInt(index, quantidade);
             try (var rows = s.executeQuery()) {

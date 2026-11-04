@@ -16,15 +16,49 @@ As instruções abaixo explicam como executar no Windows, conectar participantes
 2. Abra `Cliente.cmd` para cada participante. Para testar no mesmo computador, abra o cliente três vezes.
 3. Escolha apelidos diferentes. Use IP `127.0.0.1` e porta `5050` no mesmo computador.
 4. Em outro computador da mesma rede, use o endereço IPv4 mostrado pelo servidor e a mesma porta.
-5. Envie uma mensagem. Todos os participantes conectados à conversa geral recebem a mensagem.
+5. Envie uma mensagem. Todos os participantes da mesma sala recebem a mensagem.
+6. Na lateral do cliente, use **Salas do servidor** para ir a Geral, Estudos, Projetos, Café ou Livre, sem sair do programa.
 
 A primeira preparação baixa as bibliotecas e exige internet. Depois disso, os lançadores usam os arquivos já compilados, recompilando quando as fontes mudam. Não abra vários lançadores durante o primeiro download. O projeto foi testado em Windows com JDK 26.0.2.1 e compilado para Java 17. Cada computador precisa ter o projeto extraído e um JDK; ainda não há instalador independente com Java embutido.
 
 O IP identifica o computador servidor; a porta identifica o serviço de chat. O apelido identifica o participante. O servidor imprime os endereços das interfaces de rede; escolha aquele da rede compartilhada com a outra pessoa. Não use `0.0.0.0` como endereço no cliente.
 
+## Várias conversas no mesmo servidor
+
+Ao abrir `Servidor.cmd`, as salas configuradas são disponibilizadas automaticamente. O padrão é **Geral, Estudos, Projetos, Café e Livre**. Elas usam **o mesmo IP e a mesma porta**. Não é necessário criar uma faixa de IPs nem abrir um servidor para cada conversa.
+
+Você entra na Geral e pode escolher outra sala na lista lateral. A lista mostra a quantidade de pessoas em cada sala. A troca mantém a conexão TCP e carrega o histórico da sala escolhida. Para conversar com outra pessoa, os dois devem escolher a mesma sala.
+
+Mensagens públicas, privadas, avisos, participantes, busca e digitação têm o escopo da sala atual. O histórico de uma sala não aparece nas outras. Os apelidos precisam ser únicos dentro da sala: se seu apelido já estiver sendo usado no destino, a troca é recusada e você continua na sala anterior.
+
+Ao atualizar uma instalação antiga, o banco é atualizado automaticamente e as mensagens existentes permanecem na **Geral**. Para usar as salas, atualize e reinicie o servidor e os clientes.
+
+### Como alterar, adicionar ou retirar salas
+
+1. Na pasta do projeto **no computador do servidor**, copie `chat.properties.example` e renomeie a cópia para `chat.properties`, caso esse arquivo ainda não exista.
+2. Abra `chat.properties` no Bloco de Notas e altere a linha `server.rooms`. Salve o arquivo como UTF-8.
+3. Encerre o servidor com Ctrl+C, abra `Servidor.cmd` novamente e reconecte os clientes. A lista será carregada pelo servidor; não é necessário editar arquivos nos computadores dos participantes.
+
+Exemplo:
+
+```properties
+server.rooms=geral:Geral;faculdade:Faculdade;amigos:Amigos;trabalho:Trabalho
+```
+
+Cada item tem o formato **identificador:nome exibido**, e os itens são separados por `;`. No exemplo, você entra em Faculdade pela lista ou com `/join faculdade`.
+
+- Para mudar somente o nome, mantenha o identificador: `faculdade:Minha Turma`. Assim, o histórico continua associado à mesma sala.
+- Para adicionar uma sala, acrescente um item, como `;jogos:Jogos`.
+- Para retirar uma sala da lista, remova seu item. O histórico permanece no banco e volta a aparecer se o mesmo identificador for adicionado novamente.
+- Mantenha uma sala com o identificador `geral`, que é a entrada inicial. Seu nome pode ser alterado, por exemplo `geral:Recepção`.
+- São aceitas de 1 a 20 salas. Os identificadores usam até 30 letras minúsculas sem acentos, números, `_` ou `-`, sem espaços. Os nomes exibidos aceitam espaços e acentos, até 40 caracteres.
+
+As mudanças só entram em vigor após reiniciar o servidor. Renomear um identificador cria outra associação de histórico; para preservar as mensagens, altere apenas o nome depois de `:`.
+
 ## Funcionalidades disponíveis
 
 - Múltiplos participantes simultâneos, broadcast e ordenação consistente.
+- Salas configuráveis abertas automaticamente, com seleção na interface, contagem de participantes e troca sem reconectar.
 - Histórico público salvo em `data/chat.mv.db`, recuperado ao conectar novamente.
 - Interface em português, bolhas de mensagem, horário, lista de participantes e avisos de entrada e saída.
 - Entrada por IP/host e porta; recusa de apelidos duplicados.
@@ -39,16 +73,18 @@ O IP identifica o computador servidor; a porta identifica o serviço de chat. O 
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
 - Filas limitadas por cliente para que um destinatário lento não bloqueie o broadcast.
 
-Privadas não ficam no banco e desaparecem ao sair ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre neste servidor. Há um único chat geral por servidor nesta versão.
+Privadas não ficam no banco e desaparecem ao sair, trocar de sala ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre na respectiva sala deste servidor. As salas são públicas e não têm senha.
 
 ## Comandos
 
 | Comando | Resultado |
 | --- | --- |
 | `/help` | Lista os comandos |
+| `/salas` ou `/rooms` | Atualiza a lista de salas e suas contagens na interface |
+| `/join estudos` ou `/sala estudos` | Troca para a sala de identificador estudos; use os identificadores definidos em server.rooms |
 | `/users` | Atualiza os participantes online |
-| `/history 50` | Carrega as últimas 50 mensagens públicas; aceita 1 a 200 |
-| `/buscar texto` | Busca literal, sem diferenciar maiúsculas, nas mensagens públicas; até 100 resultados |
+| `/history 50` | Carrega as últimas 50 mensagens públicas da sala atual; aceita 1 a 200 |
+| `/buscar texto` | Busca literal, sem diferenciar maiúsculas, nas mensagens públicas da sala atual; até 100 resultados |
 | `/msg Ana Olá` | Envia uma mensagem privada para Ana |
 | `/msg "Ana Silva" Olá` | Envia uma mensagem privada para um apelido com espaços |
 | `/quit` | Encerra a conexão |
@@ -59,7 +95,7 @@ Ao selecionar uma pessoa na interface, o nome completo é reconhecido automatica
 
 ## Configuração
 
-Copie `chat.properties.example` para `chat.properties` e ajuste os valores se necessário. O padrão é porta 5050, bind em todas as interfaces, limite de 100 conexões e 50 mensagens iniciais. Somente o servidor acessa o banco. Para encerrar o servidor, use Ctrl+C na janela dele; fechar um cliente não encerra os demais.
+Copie `chat.properties.example` para `chat.properties` e ajuste os valores se necessário. O padrão é porta 5050, bind em todas as interfaces, limite de 100 conexões, 50 mensagens iniciais e cinco salas. `server.rooms` define as salas. `server.port` altera a porta usada por todas elas. O IP é o endereço real do computador na rede. Somente o servidor acessa o banco. Para encerrar o servidor, use Ctrl+C na janela dele; fechar um cliente não encerra os demais.
 
 O uso inicial é em rede local confiável. TCP não está criptografado e apelidos não têm autenticação. Redes diferentes exigem uma rota entre os computadores, como uma VPN existente, ou uma futura implantação apropriada. Um IP local não é acessível diretamente pela internet. Se outra máquina não conectar, confira IP, porta, rede e a permissão de entrada do Java no firewall; o projeto não altera essas configurações.
 

@@ -11,6 +11,7 @@ O primeiro marco entrega o núcleo acadêmico com interface gráfica animada e r
 | TCP e concorrência | Implementada | Três clientes, ordem consistente e queda isolada |
 | Interface e animações | Implementada | Login por IP/porta, conversa, participantes e transições |
 | Comandos e recursos úteis | Implementada | Privadas em sessão, busca, digitação e cópia |
+| Várias conversas no mesmo servidor | Implementada | Salas configuráveis, troca pela interface e histórico isolado |
 | Demonstração em dois computadores | Pendente | Conectar dois dispositivos reais na mesma rede |
 | Vídeo da entrega | Pendente | Gravar três clientes simultâneos e recuperação de histórico |
 
@@ -21,7 +22,7 @@ O primeiro marco entrega o núcleo acadêmico com interface gráfica animada e r
 | Alta | Instalador Windows com runtime incluído | Permitir abrir sem instalar JDK ou Maven |
 | Alta | Reconexão automática com retomada por ID | Recuperar lacunas sem repetir mensagens; não reenviar automaticamente conteúdo sem confirmação |
 | Alta | Controle de flood | Aplicar limite por sessão com relógio testável e feedback claro |
-| Média | Salas | Separar conversas por identificador de sala; requer histórico com escopo por sala |
+| Média | Gestão de salas em execução | Permitir criar e renomear salas sem reiniciar o servidor; a configuração por arquivo já está disponível |
 | Média | Contas e TLS | Necessários antes de exposição pública; só então histórico privado persistido por identidade autenticada |
 | Média | Testes automatizados da interface | Cobrir conexão, acessibilidade, teclado, busca e mudanças de destinatário |
 | Baixa | Entrega e leitura confirmadas | Exige protocolo de ACK e apresentação honesta dos estados |

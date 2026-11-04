@@ -20,12 +20,21 @@ import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.Locale;
+import java.util.List;
+import java.util.ArrayList;
 
 public final class ClienteChat extends Application {
     private Stage janela;
     private Scene cena;
     private ConexaoChat conexao;
     private String apelido, endereco;
+    private String salaAtualId = "geral", salaAtualNome = "Geral";
+    private record ResumoSala(String id, String nome, int usuarios) {
+        @Override public String toString() { return nome + " · " + usuarios + (usuarios == 1 ? " pessoa" : " pessoas"); }
+    }
+    private final List<ResumoSala> salasDisponiveis = new ArrayList<>();
+    private ComboBox<ResumoSala> escolherSala;
+    private boolean atualizandoSalas, trocandoSala;
     private boolean conectado, carregandoHistorico, atualizandoParticipantes;
     private final Animacoes animacoes = new Animacoes();
     private StackPane palco;
@@ -65,6 +74,7 @@ public final class ClienteChat extends Application {
     private void mostrarLogin(String mensagem) {
         prepararTela();
         conectado = false;
+        salasDisponiveis.clear(); trocandoSala = false;
         VBox apresentacao = new VBox(20); apresentacao.getStyleClass().add("intro"); apresentacao.setPrefWidth(490); apresentacao.setMinWidth(430);
         Label marca = label("●  conexo", "brand");
         Label selo = label("UM ESPAÇO PARA SE CONECTAR", "eyebrow");
@@ -87,7 +97,7 @@ public final class ClienteChat extends Application {
         conectar = botao("Conectar ao chat  →", "primary"); conectar.setMaxWidth(Double.MAX_VALUE); conectar.setDefaultButton(true); conectar.setId("conectar");
         conectar.setOnAction(e -> conectar()); nome.setOnAction(e -> conectar());
         Label dica = label("No mesmo computador, use 127.0.0.1.\nEm outra máquina, use o IP exibido pelo servidor.", "small-muted"); dica.setWrapText(true);
-        Label privacidade = label("Rede local · Histórico público salvo no servidor", "small-muted");
+        Label privacidade = label("Várias salas · Troque de conversa depois de entrar", "small-muted");
         formulario.getChildren().addAll(passo, heading, explicacao, espaco(8), label("Seu apelido", "field-label"), nome, rede, erroLogin, conectar, dica, espaco(6), privacidade);
         StackPane direita = new StackPane(formulario); direita.setPadding(new Insets(28)); HBox.setHgrow(direita, Priority.ALWAYS);
         HBox raiz = new HBox(apresentacao, direita); raiz.getStyleClass().add("login-root"); trocar(raiz);
@@ -129,18 +139,21 @@ public final class ClienteChat extends Application {
         BorderPane raiz = new BorderPane(); raiz.getStyleClass().add("chat-root");
         VBox lateral = new VBox(14); lateral.getStyleClass().add("sidebar"); lateral.setPrefWidth(258); lateral.setMinWidth(230);
         Label marca = label("●  conexo", "brand"); marca.setPadding(new Insets(0, 0, 24, 0));
-        Button geral = botao("#   Conversa geral", "channel"); geral.setMaxWidth(Double.MAX_VALUE); geral.setOnAction(e -> { destino.setValue("Todos"); comando("/history 50"); });
+        escolherSala = new ComboBox<>(); escolherSala.setMaxWidth(Double.MAX_VALUE); escolherSala.setPromptText("Carregando salas…"); escolherSala.setId("salas"); escolherSala.setAccessibleText("Escolher sala do servidor"); escolherSala.getStyleClass().add("room-picker");
+        escolherSala.setOnAction(e -> { if (!atualizandoSalas) trocarSala(); });
+        preencherSalas();
+        Button geral = botao("#   " + salaAtualNome, "channel"); geral.setMaxWidth(Double.MAX_VALUE); geral.setOnAction(e -> { destino.setValue("Todos"); comando("/history 50"); });
         online = label("PARTICIPANTES", "sidebar-label"); participantes = new VBox(6);
         ScrollPane lista = new ScrollPane(participantes); lista.getStyleClass().add("people-scroll"); lista.setFitToWidth(true); VBox.setVgrow(lista, Priority.ALWAYS);
         Label voce = label(apelido + "  ·  você", "sidebar-name");
-        estadoConexao = label("●  Conectado\n" + endereco, "connection"); estadoConexao.setWrapText(true);
-        Button copiar = botao("Copiar endereço", "sidebar-button"); copiar.setOnAction(e -> { ClipboardContent c = new ClipboardContent(); c.putString(endereco); Clipboard.getSystemClipboard().setContent(c); aviso.setText("Endereço copiado. Compartilhe com quem está na mesma rede."); });
+        estadoConexao = label("●  Conectado\n" + endereco + "\nSala: " + salaAtualNome, "connection"); estadoConexao.setWrapText(true);
+        Button copiar = botao("Copiar endereço", "sidebar-button"); copiar.setOnAction(e -> { ClipboardContent c = new ClipboardContent(); c.putString(endereco); Clipboard.getSystemClipboard().setContent(c); aviso.setText("Endereço copiado. Entre nesse servidor e escolha a sala " + salaAtualNome + "."); });
         Button sair = botao("Sair do chat  ↗", "sidebar-button"); sair.setOnAction(e -> sair());
-        lateral.getChildren().addAll(marca, label("SEU ESPAÇO", "sidebar-label"), geral, espaco(12), online, lista, voce, estadoConexao, copiar, sair);
+        lateral.getChildren().addAll(marca, label("SALAS DO SERVIDOR", "sidebar-label"), escolherSala, geral, espaco(6), online, lista, voce, estadoConexao, copiar, sair);
         raiz.setLeft(lateral);
 
         VBox principal = new VBox();
-        titulo = label("Conversa geral", "chat-title"); subtitulo = label("Um lugar para compartilhar ideias e se encontrar.", "muted");
+        titulo = label("Sala " + salaAtualNome, "chat-title"); subtitulo = label("Um lugar para compartilhar ideias e se encontrar.", "muted");
         VBox titulos = new VBox(5, titulo, subtitulo); HBox.setHgrow(titulos, Priority.ALWAYS);
         totalOnline = label("Conectado", "status-text"); pontoConexao = new Circle(4, Color.web("#397c54"));
         HBox status = new HBox(7, pontoConexao, totalOnline); status.setAlignment(Pos.CENTER); status.getStyleClass().add("status-pill");
@@ -176,14 +189,24 @@ public final class ClienteChat extends Application {
         HBox legenda = new HBox(ajuda, respiro, contador);
         VBox rodape = new VBox(9, indicadorDigitacao, aviso, composicao, legenda); rodape.getStyleClass().add("composer");
         principal.getChildren().addAll(header, ferramentas, conversa, rodape); raiz.setCenter(principal);
-        trocar(raiz); janela.setTitle("Conexo · " + apelido + " · " + endereco); Platform.runLater(texto::requestFocus);
+        trocar(raiz); janela.setTitle("Conexo · " + salaAtualNome + " · " + apelido + " · " + endereco); Platform.runLater(texto::requestFocus);
         animacoes.aparecer(lateral, -14, 0, 30); animacoes.aparecer(header, 0, 10, 70); animacoes.aparecer(rodape, 0, 16, 130);
     }
     private void receber(Evento evento) {
         switch (evento.tipo()) {
-            case BEM_VINDO -> { conectado = true; mostrarChat(); }
+            case BEM_VINDO -> {
+                if (evento.campos().size() >= 3) { salaAtualId = evento.campo(1); salaAtualNome = evento.campo(2); }
+                else { salaAtualId = "geral"; salaAtualNome = "Geral"; }
+                trocandoSala = false; conectado = true; mostrarChat();
+            }
             case ERRO -> {
-                if (conectado) { aviso.setText(evento.campo(0)); aviso.getStyleClass().add("error"); }
+                if (conectado) {
+                    aviso.setText(evento.campo(0)); aviso.getStyleClass().add("error");
+                    if (trocandoSala) {
+                        trocandoSala = false; preencherSalas(); texto.setDisable(false); destino.setDisable(false);
+                        enviarMensagem.setDisable(texto.getText().isBlank() || texto.getText().length() > 500);
+                    }
+                }
                 else { erroLogin.setText(evento.campo(0)); animacoes.aparecer(erroLogin, 0, 4, 0); ConexaoChat anterior = conexao; conexao = null; anterior.close(); restaurarBotaoConectar(); }
             }
             case HISTORICO_INICIO -> { carregandoHistorico = true; mensagens.getChildren().clear(); ids.clear(); vazio = null; subtitulo.setText(evento.campo(0)); }
@@ -225,6 +248,13 @@ public final class ClienteChat extends Application {
                 atualizandoParticipantes = false; destacarDestino();
             }
             case DIGITANDO -> { mostrarDigitacao(evento.campo(0)); expirarDigitacao.playFromStart(); }
+            case SALAS -> {
+                salasDisponiveis.clear();
+                for (int i = 1; i + 2 < evento.campos().size(); i += 3) {
+                    salasDisponiveis.add(new ResumoSala(evento.campo(i), evento.campo(i + 1), Integer.parseInt(evento.campo(i + 2))));
+                }
+                preencherSalas();
+            }
             case PONG -> { }
         }
     }
@@ -280,6 +310,21 @@ public final class ClienteChat extends Application {
         return avatar;
     }
     private String primeiraLetra(String texto) { return texto.substring(0, texto.offsetByCodePoints(0, 1)); }
+    private void preencherSalas() {
+        atualizandoSalas = true;
+        try {
+            escolherSala.getItems().setAll(salasDisponiveis);
+            escolherSala.getSelectionModel().select(salasDisponiveis.stream().filter(s -> s.id().equals(salaAtualId)).findFirst().orElse(null));
+            escolherSala.setDisable(trocandoSala || salasDisponiveis.size() <= 1);
+        } finally { atualizandoSalas = false; }
+    }
+    private void trocarSala() {
+        ResumoSala proxima = escolherSala.getValue();
+        if (conexao == null || !conectado || trocandoSala || proxima == null || proxima.id().equals(salaAtualId)) return;
+        trocandoSala = true; escolherSala.setDisable(true); texto.setDisable(true); destino.setDisable(true); enviarMensagem.setDisable(true);
+        aviso.getStyleClass().removeIf("error"::equals); aviso.setText("Entrando na sala " + proxima.nome() + "…");
+        conexao.enviar("/join " + proxima.id());
+    }
     private void atualizarDestino() {
         destacarDestino();
         boolean publica = "Todos".equals(destino.getValue());
@@ -345,7 +390,7 @@ public final class ClienteChat extends Application {
         conexao = null;
         if (conectado) {
             conectado = false; texto.setDisable(true); destino.setDisable(true); busca.setDisable(true);
-            enviarMensagem.setDisable(true); ocultarDigitacao(); pulsoConexao.stop(); pontoConexao.setFill(Color.web("#b97964")); totalOnline.setText("Offline");
+            enviarMensagem.setDisable(true); escolherSala.setDisable(true); trocandoSala = false; ocultarDigitacao(); pulsoConexao.stop(); pontoConexao.setFill(Color.web("#b97964")); totalOnline.setText("Offline");
             estadoConexao.setText("○  Desconectado\n" + endereco); participantes.getChildren().clear(); online.setText("VOCÊ ESTÁ OFFLINE");
             aviso.setText(motivo); aviso.getStyleClass().add("error"); sistema("Você está offline. Use “Sair do chat” para conectar novamente.");
         } else { erroLogin.setText(motivo); animacoes.aparecer(erroLogin, 0, 4, 0); restaurarBotaoConectar(); }
