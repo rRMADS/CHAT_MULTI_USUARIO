@@ -77,9 +77,13 @@ public final class ChatService {
     public List<String> usuariosOnline() { return registry.snapshot().stream().map(c -> c.getUsuario().nome()).sorted(String.CASE_INSENSITIVE_ORDER).toList(); }
     public int quantidadeUsuarios() { return registry.quantidade(); }
     public synchronized void digitando(ConexaoCliente origem) {
+        digitando(origem, true);
+    }
+    public synchronized void digitando(ConexaoCliente origem, boolean ativo) {
+        exigirConectado(origem);
         boolean houveFalha = false;
         for (var c : registry.snapshot()) if (c != origem) {
-            try { c.enviar(Evento.de(DIGITANDO, origem.getUsuario().nome())); }
+            try { c.enviar(ativo ? Evento.de(DIGITANDO, origem.getUsuario().nome()) : Evento.de(DIGITANDO, origem.getUsuario().nome(), "stop")); }
             catch (RuntimeException e) { registry.remover(c); c.fechar(); houveFalha = true; }
         }
         if (houveFalha) publicarUsuarios();

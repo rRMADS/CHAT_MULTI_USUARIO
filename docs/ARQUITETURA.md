@@ -38,7 +38,13 @@ flowchart LR
 
 A apresentação visual combina o tema Primer Light do AtlantaFX 2.0.1 com a paleta verde do Conexo. `client.Icones` centraliza os ícones Feather do Ikonli 12.4.0 e preserva a fonte do pacote ao ajustar os tamanhos. `client.Animacoes` combina fades do AnimateFX 1.3.0 com transições nativas do JavaFX para a janela, telas, ilustração, botões, envio e novas mensagens. As animações permanecem sempre ativas e rodam na thread do JavaFX. Efeitos contínuos e transitórios são interrompidos ao sair ou trocar de tela; os controles descartados não ficam retidos pelo registro de interações. O fechamento da janela bloqueia novos eventos, fecha a conexão e termina o JavaFX após uma transição curta.
 
-Histórico aparece em conjunto; novas mensagens entram individualmente. A rolagem suave respeita a leitura de mensagens antigas e oferece um atalho para voltar às novas mensagens. Se um destinatário privado sair, a seleção permanece privada e avisa que a pessoa está offline, em vez de trocar automaticamente para envio público. A indicação **Salva no servidor** usa o evento público devolvido após a persistência, sem simular confirmação de leitura.
+Histórico aparece em conjunto; novas mensagens entram individualmente. A troca substitui a tela anterior antes da entrada, evitando sobreposição de letras; botões respondem à pressão sem aumentar de tamanho ao passar o mouse. A rolagem suave agrupa atualizações do mesmo ciclo do JavaFX, respeita a leitura de mensagens antigas e oferece um atalho para voltar às novas mensagens. A tipografia usa mensagens de 16 px e campos de 15 px, com bolhas limitadas à largura da conversa.
+
+`BalaoRascunho` mede o texto local e anima a largura e a altura da prévia, sem enviar o conteúdo à conexão. A prévia diferencia envio público e privado e não aparece para comandos. `BalaoDigitacao` mostra nome, avatar e pontos animados de um participante remoto. Há um temporizador separado por participante; mensagens, saída da sala e eventos de parada removem apenas o balão correspondente. Ao trocar de tela, timers e efeitos são encerrados.
+
+O cliente envia `/typing` enquanto há atividade em um rascunho público e `/typing stop` ao parar, apagar, enviar, selecionar privado ou iniciar a troca de sala. O servidor transmite `DIGITANDO` com o nome e, para a parada, o segundo campo `stop`; nenhum evento contém texto do rascunho. O limite de frequência permite retomada imediata após uma parada. Digitação permanece isolada por sala e não é persistida. Os clientes devem ser atualizados junto com o servidor para interpretar a parada explícita.
+
+Se um destinatário privado sair, a seleção permanece privada e avisa que a pessoa está offline, em vez de trocar automaticamente para envio público. A indicação **Salva no servidor** usa o evento público devolvido após a persistência, sem simular confirmação de leitura.
 
 ## Fluxo público
 

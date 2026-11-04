@@ -24,7 +24,10 @@ public final class CommandService {
             "/history", (c, a) -> chat.buscarHistorico(c, a.isBlank() ? 50 : Integer.parseInt(a)),
             "/buscar", chat::buscarTexto,
             "/msg", this::enviarPrivada,
-            "/typing", (c, a) -> chat.digitando(c),
+            "/typing", (c, a) -> {
+                if (!a.isBlank() && !a.equalsIgnoreCase("stop")) throw new IllegalArgumentException("Estado de digitação inválido.");
+                chat.digitando(c, a.isBlank());
+            },
             "/ping", (c, a) -> c.enviar(Evento.de(PONG)),
             "/quit", (c, a) -> c.fechar()
         );

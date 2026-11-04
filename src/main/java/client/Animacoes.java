@@ -18,6 +18,7 @@ import java.util.WeakHashMap;
 
 /** Efeitos visuais executados exclusivamente na thread do JavaFX. */
 final class Animacoes {
+    static final Interpolator SUAVE = Interpolator.SPLINE(.2, .8, .2, 1);
     private final Set<Animation> ativos = Collections.newSetFromMap(new IdentityHashMap<>());
     // Controles removidos da lista de participantes não ficam retidos até a próxima sala.
     private final Set<Animation> interacoes = Collections.newSetFromMap(new WeakHashMap<>());
@@ -36,17 +37,9 @@ final class Animacoes {
     }
 
     void trocar(StackPane palco, Parent tela) {
-        Node anterior = palco.getChildren().isEmpty() ? null : palco.getChildren().get(palco.getChildren().size() - 1);
+        if (troca != null) troca.stop();
         palco.getChildren().setAll(tela);
-        var entrada = entrada(tela, 0, 12, 0);
-        if (anterior != null) {
-            anterior.setMouseTransparent(true);
-            palco.getChildren().add(0, anterior);
-            var saida = new FadeOut(anterior).setSpeed(1000.0 / 160).getTimeline();
-            var transicao = new ParallelTransition(saida, entrada);
-            transicao.setOnFinished(e -> palco.getChildren().remove(anterior));
-            troca = transicao;
-        } else troca = entrada;
+        troca = entrada(tela, 0, 6, 0);
         troca.play();
     }
 
@@ -59,13 +52,21 @@ final class Animacoes {
         ativos.add(animacao); animacao.play();
     }
 
+    void sumir(Node node, Runnable concluido) {
+        Animation anterior = entradas.remove(node);
+        if (anterior != null) { anterior.stop(); ativos.remove(anterior); }
+        var fade = new FadeTransition(Duration.millis(130), node); fade.setToValue(0);
+        entradas.put(node, fade); ativos.add(fade);
+        fade.setOnFinished(e -> { ativos.remove(fade); entradas.remove(node, fade); concluido.run(); }); fade.play();
+    }
+
     private ParallelTransition entrada(Node node, double x, double y, double atraso) {
-        var fade = new FadeIn(node).setSpeed(1000.0 / 280).getTimeline();
+        var fade = new FadeIn(node).setSpeed(1000.0 / 190).getTimeline();
         node.setOpacity(0);
-        var mover = new TranslateTransition(Duration.millis(320), node);
+        var mover = new TranslateTransition(Duration.millis(250), node);
         node.setTranslateX(x); node.setTranslateY(y);
         mover.setFromX(x); mover.setToX(0); mover.setFromY(y); mover.setToY(0);
-        mover.setInterpolator(Interpolator.EASE_OUT);
+        mover.setInterpolator(SUAVE);
         var transicao = new ParallelTransition(fade, mover);
         transicao.setDelay(Duration.millis(atraso));
         return transicao;
@@ -79,8 +80,8 @@ final class Animacoes {
     }
 
     Animation pulsar(Node node) {
-        var fade = new FadeTransition(Duration.seconds(1.7), node);
-        fade.setFromValue(.45); fade.setToValue(1); fade.setAutoReverse(true);
+        var fade = new FadeTransition(Duration.seconds(2.2), node);
+        fade.setFromValue(.72); fade.setToValue(1); fade.setAutoReverse(true);
         fade.setCycleCount(Animation.INDEFINITE); ativos.add(fade); fade.play(); return fade;
     }
 
@@ -116,10 +117,11 @@ final class Animacoes {
     void prepararBotao(Button botao) {
         var escala = new ScaleTransition(Duration.millis(140), botao);
         interacoes.add(escala);
-        botao.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> ajustar(botao, escala, 1.025));
+        escala.setInterpolator(SUAVE);
+        botao.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> ajustar(botao, escala, 1));
         botao.addEventHandler(MouseEvent.MOUSE_EXITED, e -> ajustar(botao, escala, 1));
-        botao.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> ajustar(botao, escala, .97));
-        botao.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> ajustar(botao, escala, botao.isHover() ? 1.025 : 1));
+        botao.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> ajustar(botao, escala, .985));
+        botao.addEventHandler(MouseEvent.MOUSE_RELEASED, e -> ajustar(botao, escala, 1));
     }
 
     private void ajustar(Button botao, ScaleTransition escala, double tamanho) {

@@ -112,6 +112,17 @@ class ServidorIntegrationTest {
             }
         }
     }
+    @Test void podePararERetomarDigitacaoImediatamenteSemEnviarRascunho() throws Exception {
+        try (var servidor = servidor(); var ana = new Cliente(servidor, "Ana Silva"); var bruno = new Cliente(servidor, "Bruno")) {
+            ana.enviar("/typing"); assertEquals(List.of("Ana Silva"), bruno.ate(DIGITANDO).campos());
+            ana.enviar("/typing stop"); assertEquals(List.of("Ana Silva", "stop"), bruno.ate(DIGITANDO).campos());
+            ana.enviar("/typing"); assertEquals(List.of("Ana Silva"), bruno.ate(DIGITANDO).campos());
+            ana.enviar("Mensagem enviada"); assertEquals("Mensagem enviada", bruno.ate(MENSAGEM).campo(2));
+            try (var novo = new Cliente(servidor, "Carla")) {
+                assertEquals(List.of("Mensagem enviada"), novo.historico.stream().map(e -> e.campo(2)).toList());
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
         final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
         Cliente(Servidor s, String nome) throws IOException {

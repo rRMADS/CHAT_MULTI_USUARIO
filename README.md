@@ -65,9 +65,11 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
 - Busca no histórico público e recuperação das últimas mensagens.
-- Indicador de digitação na conversa geral.
+- Balões de digitação na conversa: nome, avatar e pontos animados para cada pessoa digitando em público na sala atual.
+- Prévia local em um balão que cresce e quebra as linhas conforme você digita; fica visível só para você até enviar. Privadas usam a cor roxa de conversa privada; comandos não geram prévia de mensagem.
+- Tipografia equilibrada: mensagens em 16 px, campos em 15 px, participantes em 14 px e informações auxiliares de 12 a 13 px, com contraste reforçado.
 - Validação de mensagens, limite de 500 caracteres e contador.
-- Animações sempre ativas: transições entre telas, entrada de mensagens, botões responsivos, ilustração flutuante e indicador de digitação com pontos animados.
+- Animações sempre ativas: transições curtas sem sobrepor telas, entrada discreta das mensagens, resposta ao pressionar botões, ilustração flutuante e pontos de digitação em ondas.
 - Abertura gradual da janela, troca de salas com transição e fechamento animado com encerramento da conexão.
 - Ícones vetoriais em botões, mensagens privadas, menus e avisos; tema verde consistente em seletores, dicas e campos.
 - Movimento do ícone ao enviar e indicação de mensagem pública salva no servidor após a confirmação do histórico. Essa indicação não confirma leitura.
@@ -98,7 +100,11 @@ Os comandos aceitam maiúsculas e espaços adicionais. Para a sala Café, funcio
 
 As respostas de ajuda e listagem ficam visíveis somente para quem pediu e não são gravadas no histórico. Se a sala não existir, a mensagem de erro sugere comandos reais disponíveis no servidor.
 
-A busca mostra os resultados públicos e as novas mensagens recebidas depois da busca. Use **Últimas mensagens** para voltar. A interface mantém até 500 itens visuais; as mensagens públicas continuam no banco. Não há confirmação de leitura ou garantia de entrega ao destinatário desconectado.
+A busca mostra os resultados públicos e as novas mensagens recebidas depois da busca. Use **Histórico** para voltar às últimas mensagens. A interface mantém até 500 itens visuais; as mensagens públicas continuam no banco. Não há confirmação de leitura ou garantia de entrega ao destinatário desconectado.
+
+O balão com o rascunho é uma prévia local: seu conteúdo não é enviado a outros participantes nem salvo no banco antes de pressionar **Enviar**. Para as outras pessoas, aparece somente o nome e o indicador de digitação. Esse indicador some ao enviar, apagar tudo, começar um comando, escolher uma conversa privada, trocar de sala ou ficar alguns segundos sem digitar. Cada participante tem um balão independente. Se o cliente cair sem avisar, o indicador expira automaticamente. As prévias são descartadas ao trocar de sala ou sair; mensagens privadas não anunciam digitação à sala pública.
+
+Depois desta atualização, reinicie o servidor e todos os clientes para usar também o encerramento imediato do indicador de digitação. O fluxo continua na mesma rede, com os mesmos IP e porta.
 
 Ao selecionar uma pessoa na interface, o nome completo é reconhecido automaticamente. Se digitar `/msg` manualmente, coloque apelidos com espaços entre aspas duplas.
 

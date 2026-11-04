@@ -58,6 +58,14 @@ class SalaServiceTest {
         assertTrue(eventos(bruno, PRIVADA).isEmpty()); assertTrue(eventos(bruno, DIGITANDO).isEmpty());
         assertEquals(1, eventos(carla, DIGITANDO).size());
     }
+    @Test void fimDaDigitacaoTambemFicaSomenteNaSalaAtual() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); var carla = cliente("Carla");
+        central.trocarSala(bruno, "estudos"); ana.limpar(); bruno.limpar(); carla.limpar();
+        central.executar(ana, "/typing stop");
+        assertEquals(List.of(Evento.de(DIGITANDO, "Ana", "stop")), eventos(carla, DIGITANDO));
+        assertTrue(eventos(bruno, DIGITANDO).isEmpty()); assertTrue(ana.recebidos.isEmpty());
+        assertTrue(repositories.values().stream().allMatch(r -> r.buscarUltimas(50).isEmpty()));
+    }
     @Test void salaInexistenteMantemParticipanteNaOrigem() {
         var ana = cliente("Ana"); var bruno = cliente("Bruno"); bruno.limpar();
         assertThrows(IllegalArgumentException.class, () -> central.trocarSala(ana, "inexistente"));

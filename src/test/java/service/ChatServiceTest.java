@@ -114,5 +114,25 @@ class ChatServiceTest {
         new CommandService(chat).executar(ana, "/MSG\u00a0Bruno\u00a0Olá");
         assertEquals("Olá", bruno.recebidos.get(0).campo(2));
     }
+    @Test void inicioEFimDaDigitacaoSoChegamAosOutrosSemPersistir() {
+        var ana = cliente("Ana Silva"); var bruno = cliente("Bruno"); ana.limpar(); bruno.limpar();
+        var comandos = new CommandService(chat); comandos.executar(ana, "/typing"); comandos.executar(ana, "/typing stop");
+        assertEquals(List.of(Evento.de(DIGITANDO, "Ana Silva"), Evento.de(DIGITANDO, "Ana Silva", "stop")), bruno.recebidos);
+        assertTrue(ana.recebidos.isEmpty()); assertTrue(repository.buscarUltimas(50).isEmpty());
+    }
+    @Test void digitacaoNaoAceitaTextoDoRascunhoComoArgumento() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); bruno.limpar();
+        assertThrows(IllegalArgumentException.class, () -> new CommandService(chat).executar(ana, "/typing meu rascunho"));
+        assertTrue(bruno.recebidos.isEmpty()); assertTrue(repository.buscarUltimas(50).isEmpty());
+    }
+    @Test void pessoaDesconectadaNaoPodePublicarDigitacao() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); chat.desconectar(ana); bruno.limpar();
+        assertThrows(IllegalArgumentException.class, () -> chat.digitando(ana)); assertTrue(bruno.recebidos.isEmpty());
+    }
+    @Test void falhaEmUmIndicadorNaoImpedeOsDemaisParticipantes() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); var carla = cliente("Carla"); bruno.falhar = true; carla.limpar();
+        chat.digitando(ana, false);
+        assertTrue(bruno.fechada); assertTrue(carla.recebidos.contains(Evento.de(DIGITANDO, "Ana", "stop")));
+    }
     private FakeConexao cliente(String nome) { var c = new FakeConexao(nome); chat.conectar(c); return c; }
 }

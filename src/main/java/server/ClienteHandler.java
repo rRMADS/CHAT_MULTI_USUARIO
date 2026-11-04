@@ -43,6 +43,7 @@ public final class ClienteHandler implements Runnable, ConexaoCliente {
                     if (agora - ultimaDigitacao < 1_000_000_000L) continue;
                     ultimaDigitacao = agora;
                 }
+                else if (linha.equals("/typing stop")) ultimaDigitacao = 0;
                 try { salas.executar(this, linha); }
                 catch (IllegalArgumentException | PersistenciaException e) { enviar(Evento.de(ERRO, e.getMessage())); }
             }
