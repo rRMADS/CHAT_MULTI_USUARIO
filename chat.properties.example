@@ -1,0 +1,7 @@
+server.bind=0.0.0.0
+server.port=5050
+server.maxClients=100
+db.url=jdbc:h2:./data/chat
+db.user=sa
+db.password=
+history.limit=50
