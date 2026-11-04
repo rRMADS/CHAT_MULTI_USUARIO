@@ -36,7 +36,9 @@ flowchart LR
 
 `Config` lê `chat.properties` em UTF-8, aceita BOM e valida identificadores únicos, limites e a presença do identificador inicial `geral`. Alterar apenas o nome exibido preserva a associação ao histórico. Retirar uma sala da configuração não apaga suas mensagens; reintroduzir o mesmo identificador recupera o conteúdo. A configuração é aplicada ao reiniciar o servidor.
 
-A apresentação visual usa `client.Animacoes` para transições entre telas, movimentos discretos da ilustração, resposta dos botões e entrada das mensagens. As animações permanecem sempre ativas e rodam na thread do JavaFX. Efeitos contínuos são interrompidos ao sair ou trocar de tela. Histórico aparece em conjunto; novas mensagens entram individualmente. A rolagem suave respeita a leitura de mensagens antigas e oferece um atalho para voltar às novas mensagens. Se um destinatário privado sair, a seleção permanece privada e avisa que a pessoa está offline, em vez de trocar automaticamente para envio público.
+A apresentação visual combina o tema Primer Light do AtlantaFX 2.0.1 com a paleta verde do Conexo. `client.Icones` centraliza os ícones Feather do Ikonli 12.4.0 e preserva a fonte do pacote ao ajustar os tamanhos. `client.Animacoes` combina fades do AnimateFX 1.3.0 com transições nativas do JavaFX para a janela, telas, ilustração, botões, envio e novas mensagens. As animações permanecem sempre ativas e rodam na thread do JavaFX. Efeitos contínuos e transitórios são interrompidos ao sair ou trocar de tela; os controles descartados não ficam retidos pelo registro de interações. O fechamento da janela bloqueia novos eventos, fecha a conexão e termina o JavaFX após uma transição curta.
+
+Histórico aparece em conjunto; novas mensagens entram individualmente. A rolagem suave respeita a leitura de mensagens antigas e oferece um atalho para voltar às novas mensagens. Se um destinatário privado sair, a seleção permanece privada e avisa que a pessoa está offline, em vez de trocar automaticamente para envio público. A indicação **Salva no servidor** usa o evento público devolvido após a persistência, sem simular confirmação de leitura.
 
 ## Fluxo público
 

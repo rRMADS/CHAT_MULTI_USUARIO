@@ -1,4 +1,20 @@
 .root { -fx-font-family: "Segoe UI", sans-serif; -fx-font-size: 14px; -fx-text-fill: #203b35; -fx-background-color: #f5f7f1; -fx-accent: #397655; -fx-focus-color: #609b73; -fx-faint-focus-color: #609b7319; }
+/* Paleta AtlantaFX: popups, seleção, foco, menus e dicas seguem o verde do Conexo. */
+.root {
+    -color-accent-0: #eff7e9; -color-accent-1: #e1efda; -color-accent-2: #c5e1bd;
+    -color-accent-3: #a5cfa0; -color-accent-4: #71a27d; -color-accent-5: #397655;
+    -color-accent-6: #2c5e43; -color-accent-7: #224c40; -color-accent-8: #183f3a; -color-accent-9: #102d29;
+    -color-accent-fg: #397655; -color-accent-emphasis: #397655; -color-accent-muted: #71a27d66; -color-accent-subtle: #eff7e9;
+    -color-fg-default: #203b35; -color-fg-muted: #647868; -color-fg-subtle: #7b897b;
+    -color-bg-default: #ffffff; -color-bg-subtle: #f5f7f1; -color-bg-inset: #edf2e8;
+}
+.app-icon { -fx-icon-color: #547d59; }
+.brand .app-icon { -fx-icon-color: #d8efb9; }
+.primary .app-icon, .new-messages .app-icon { -fx-icon-color: white; }
+.sidebar-button .app-icon, .connection .app-icon { -fx-icon-color: #abc7ad; }
+.channel .app-icon { -fx-icon-color: #e2f1c9; }
+.private-label .app-icon { -fx-icon-color: #88649b; }
+.button { -fx-graphic-text-gap: 9; -fx-border-color: transparent; -fx-border-width: 1; }
 .label { -fx-text-fill: #203b35; }
 .login-root { -fx-background-color: linear-gradient(to bottom right, #f7f8f1, #edf2e8); }
 .intro { -fx-background-color: linear-gradient(to bottom right, #153e3a, #204d43); -fx-padding: 36 40 28 40; }
@@ -52,6 +68,11 @@
 .bubble-own { -fx-background-color: linear-gradient(to bottom right, #e1efcc, #d6e9be); -fx-background-radius: 18 5 18 18; -fx-padding: 16 19; -fx-effect: dropshadow(gaussian, #3c563312, 10, .02, 0, 3); }
 .bubble:hover, .bubble-own:hover { -fx-effect: dropshadow(gaussian, #3c56331e, 14, .05, 0, 4); }
 .bubble-private { -fx-background-color: linear-gradient(to bottom right, #f1eafa, #e8def2); -fx-border-color: #d8c8e7; -fx-border-radius: 16; -fx-background-radius: 16; }
+.message-receipt { -fx-font-size: 9px; -fx-text-fill: #64815b; -fx-graphic-text-gap: 5; -fx-alignment: center-right; -fx-max-width: infinity; }
+.message-receipt .app-icon { -fx-icon-color: #64815b; }
+.empty-state { -fx-padding: 38 20; -fx-background-color: #ffffff80; -fx-background-radius: 20; -fx-border-color: #e1e8da; -fx-border-radius: 20; }
+.empty-icon { -fx-background-color: #e9f2df; -fx-background-radius: 18; -fx-padding: 17; }
+.empty-title { -fx-font-size: 19px; -fx-font-weight: bold; -fx-text-fill: #426445; }
 .private-label { -fx-font-size: 10px; -fx-font-weight: bold; -fx-text-fill: #88649b; }
 .message-author { -fx-font-size: 11px; -fx-font-weight: bold; -fx-text-fill: #426445; }
 .message-meta { -fx-font-size: 10px; -fx-text-fill: #85917b; }
@@ -82,6 +103,12 @@
 .room-picker > .list-cell { -fx-text-fill: #e0efca; -fx-font-size: 12px; }
 .room-picker > .arrow-button > .arrow { -fx-background-color: #b3cca5; }
 .room-picker .list-view .list-cell { -fx-text-fill: #345741; }
+.combo-box-popup .list-view { -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 5; -fx-effect: dropshadow(gaussian, #203b3529, 18, .08, 0, 5); }
+.combo-box-popup .list-cell { -fx-padding: 10 12; -fx-background-radius: 7; }
+.combo-box-popup .list-cell:filled:selected { -fx-background-color: #dcebd2; -fx-text-fill: #234c39; }
+.combo-box-popup .list-cell:filled:hover { -fx-background-color: #edf4e7; -fx-text-fill: #234c39; }
+.context-menu { -fx-background-radius: 12; -fx-padding: 5; }
+.tooltip { -fx-background-color: #254c40; -fx-text-fill: #f2f7ed; -fx-background-radius: 8; -fx-padding: 9 12; -fx-font-size: 11px; }
 .new-messages { -fx-background-color: #346e4e; -fx-text-fill: #ffffff; -fx-background-radius: 24; -fx-font-size: 11px; -fx-padding: 11 16; -fx-effect: dropshadow(gaussian, #31563c30, 16, .1, 0, 4); }
 .scroll-bar { -fx-background-color: transparent; -fx-pref-width: 8; }
 .scroll-bar .thumb { -fx-background-color: #bdcbb4; -fx-background-radius: 6; }

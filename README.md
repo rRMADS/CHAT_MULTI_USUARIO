@@ -1,6 +1,6 @@
 # Conexo
 
-Chat multiusuário desktop em Java, com sockets TCP, histórico JDBC e interface JavaFX com animações suaves.
+Chat multiusuário desktop em Java, com sockets TCP, histórico JDBC e interface JavaFX com AtlantaFX, ícones Ikonli e animações AnimateFX.
 
 ## Download e requisitos
 
@@ -68,6 +68,9 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Indicador de digitação na conversa geral.
 - Validação de mensagens, limite de 500 caracteres e contador.
 - Animações sempre ativas: transições entre telas, entrada de mensagens, botões responsivos, ilustração flutuante e indicador de digitação com pontos animados.
+- Abertura gradual da janela, troca de salas com transição e fechamento animado com encerramento da conexão.
+- Ícones vetoriais em botões, mensagens privadas, menus e avisos; tema verde consistente em seletores, dicas e campos.
+- Movimento do ícone ao enviar e indicação de mensagem pública salva no servidor após a confirmação do histórico. Essa indicação não confirma leitura.
 - Avatares com iniciais, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
@@ -117,6 +120,18 @@ Abra `pom.xml` na IDE de sua preferência como projeto Maven. Execute `Testes.cm
 ```
 
 Pontos de entrada: `server.Servidor` e `client.Launcher`. Pelo terminal, use `mvnw.cmd compile exec:java` para o servidor e `mvnw.cmd compile javafx:run` para o cliente. Em Linux/macOS, substitua `mvnw.cmd` por `sh mvnw`.
+
+### Bibliotecas visuais
+
+| Biblioteca | Versão | Aplicação no Conexo |
+| --- | --- | --- |
+| [AtlantaFX](https://github.com/mkpaz/atlantafx) | 2.0.1 | Tema Primer Light, com a paleta verde personalizada |
+| [Ikonli](https://github.com/kordamp/ikonli) + Feather | 12.4.0 | Ícones vetoriais nos controles e nas mensagens |
+| [AnimateFX](https://github.com/Typhon0/AnimateFX) | 1.3.0 | Fade de entrada, troca de telas e fechamento |
+
+As versões estão fixadas no `pom.xml` e são baixadas automaticamente. AtlantaFX 2.0.1 mantém a compatibilidade com Java 17; AnimateFX 1.3.0 é a versão publicada no Maven Central usada no projeto. As transições de movimento, rolagem, digitação e interação são combinadas com as animações nativas do JavaFX. Ao sair de uma tela, as animações anteriores são interrompidas.
+
+Para ver a atualização, feche os clientes antigos e abra `Cliente.cmd` novamente. Na primeira abertura após atualizar, é necessário ter internet para baixar as novas bibliotecas. O servidor continua usando as mesmas salas, porta e banco. Créditos e licenças estão em [TERCEIROS.md](docs/TERCEIROS.md).
 
 ## Arquivos do repositório
 
