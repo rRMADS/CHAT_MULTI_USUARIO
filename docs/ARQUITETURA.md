@@ -31,6 +31,8 @@ flowchart LR
 
 `Servidor.main` monta as implementações e injeta as dependências. O cliente não conhece os serviços ou o banco. Serviços não importam `java.net` ou `java.sql`. O protocolo tem pacote próprio porque é compartilhado pelos dois lados. Essa é uma adaptação deliberada da sugestão de manter Protocolo em server no DOCX.
 
+A apresentação visual usa `client.Animacoes` para transições entre telas, movimentos discretos da ilustração, resposta dos botões e entrada das mensagens. As animações permanecem sempre ativas e rodam na thread do JavaFX. Efeitos contínuos são interrompidos ao sair ou trocar de tela. Histórico aparece em conjunto; novas mensagens entram individualmente. A rolagem suave respeita a leitura de mensagens antigas e oferece um atalho para voltar às novas mensagens. Se um destinatário privado sair, a seleção permanece privada e avisa que a pessoa está offline, em vez de trocar automaticamente para envio público.
+
 ## Fluxo público
 
 1. O cliente envia uma linha; uma thread de rede a entrega ao handler.

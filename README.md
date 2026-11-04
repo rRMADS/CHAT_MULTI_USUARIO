@@ -33,7 +33,8 @@ O IP identifica o computador servidor; a porta identifica o serviço de chat. O 
 - Busca no histórico público e recuperação das últimas mensagens.
 - Indicador de digitação na conversa geral.
 - Validação de mensagens, limite de 500 caracteres e contador.
-- Animações de entrada e novas mensagens, com opção para desativar.
+- Animações sempre ativas: transições entre telas, entrada de mensagens, botões responsivos, ilustração flutuante e indicador de digitação com pontos animados.
+- Avatares com iniciais, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
 - Filas limitadas por cliente para que um destinatário lento não bloqueie o broadcast.
