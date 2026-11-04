@@ -77,17 +77,23 @@ Privadas não ficam no banco e desaparecem ao sair, trocar de sala ou recarregar
 
 ## Comandos
 
+Digite o comando no campo de mensagens e pressione **Enter** ou clique em **Enviar**. Digitar apenas `/` e enviar também abre a ajuda. O botão **Comandos /** mostra a mesma ajuda, com exemplos das salas realmente configuradas no servidor.
+
 | Comando | Resultado |
 | --- | --- |
-| `/help` | Lista os comandos |
-| `/salas` ou `/rooms` | Atualiza a lista de salas e suas contagens na interface |
-| `/join estudos` ou `/sala estudos` | Troca para a sala de identificador estudos; use os identificadores definidos em server.rooms |
-| `/users` | Atualiza os participantes online |
-| `/history 50` | Carrega as últimas 50 mensagens públicas da sala atual; aceita 1 a 200 |
+| `/help`, `/ajuda` ou `/` | Mostra a ajuda em um cartão com instruções e exemplos |
+| `/salas` ou `/rooms` | Lista salas, contagens e comandos para entrar; também atualiza a lista lateral |
+| `/join estudos` ou `/sala Estudos` | Troca pelo identificador ou pelo nome exibido da sala |
+| `/users` ou `/usuarios` | Mostra os participantes da sala em uma resposta visível |
+| `/history 50` ou `/historico 50` | Carrega as últimas 50 mensagens públicas da sala atual; aceita 1 a 200 |
 | `/buscar texto` | Busca literal, sem diferenciar maiúsculas, nas mensagens públicas da sala atual; até 100 resultados |
 | `/msg Ana Olá` | Envia uma mensagem privada para Ana |
 | `/msg "Ana Silva" Olá` | Envia uma mensagem privada para um apelido com espaços |
-| `/quit` | Encerra a conexão |
+| `/quit` ou `/sair` | Encerra a conexão |
+
+Os comandos aceitam maiúsculas e espaços adicionais. Para a sala Café, funcionam `/join cafe` e `/join Café`. Para um nome com espaços, use, por exemplo, `/join "Sala da Turma"`. Se duas salas tiverem o mesmo nome, informe o identificador mostrado por `/salas`. Uma troca para a sala em que você já está também recebe confirmação.
+
+As respostas de ajuda e listagem ficam visíveis somente para quem pediu e não são gravadas no histórico. Se a sala não existir, a mensagem de erro sugere comandos reais disponíveis no servidor.
 
 A busca mostra os resultados públicos e as novas mensagens recebidas depois da busca. Use **Últimas mensagens** para voltar. A interface mantém até 500 itens visuais; as mensagens públicas continuam no banco. Não há confirmação de leitura ou garantia de entrega ao destinatário desconectado.
 

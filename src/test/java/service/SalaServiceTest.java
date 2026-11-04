@@ -116,4 +116,36 @@ class SalaServiceTest {
         } finally { executor.shutdownNow(); }
     }
     private void aguardar(CountDownLatch inicio) { try { inicio.await(); } catch (InterruptedException e) { Thread.currentThread().interrupt(); throw new RuntimeException(e); } }
+    @Test void ajudaESalasMostramComandosDasSalasConfiguradas() {
+        var ana = cliente("Ana"); ana.limpar(); central.executar(ana, "/help");
+        assertTrue(ana.recebidos.get(0).campo(0).contains("/join estudos"));
+        ana.limpar(); central.executar(ana, "/salas");
+        var resposta = eventos(ana, SISTEMA).get(0); assertEquals("Salas disponíveis", resposta.campo(1));
+        assertTrue(resposta.campo(0).contains("/join geral"));
+        ana.limpar(); central.executar(ana, "/join geral");
+        assertTrue(eventos(ana, SISTEMA).get(0).campo(0).contains("Você já está"));
+    }
+    @Test void trocaAceitaNomeExibidoAcentuadoEComEspacos() {
+        Map<Sala, ChatService> conversas = new LinkedHashMap<>();
+        for (var sala : List.of(Sala.GERAL, new Sala("cafe", "Café"), new Sala("turma", "Sala da Turma")))
+            conversas.put(sala, new ChatService(new InMemoryMensagemRepository(), new ClientRegistry(), Clock.systemUTC(), 50, sala));
+        var servico = new SalaService(conversas); var ana = new FakeConexao("Ana"); servico.conectar(ana); ana.limpar();
+        servico.executar(ana, "/JOIN\u00a0Café"); assertEquals("cafe", eventos(ana, BEM_VINDO).get(0).campo(1));
+        ana.limpar(); servico.executar(ana, "/sala \"Sala da Turma\"");
+        assertEquals("turma", eventos(ana, BEM_VINDO).get(0).campo(1));
+    }
+    @Test void nomeAmbiguoNaoMoveParaSalaErrada() {
+        Map<Sala, ChatService> conversas = new LinkedHashMap<>();
+        for (var sala : List.of(Sala.GERAL, new Sala("a", "Estudos"), new Sala("b", "Estudos")))
+            conversas.put(sala, new ChatService(new InMemoryMensagemRepository(), new ClientRegistry(), Clock.systemUTC(), 50, sala));
+        var servico = new SalaService(conversas); var ana = new FakeConexao("Ana"); servico.conectar(ana); ana.limpar();
+        var erro = assertThrows(IllegalArgumentException.class, () -> servico.executar(ana, "/join Estudos"));
+        assertTrue(erro.getMessage().contains("/join a")); assertTrue(eventos(ana, BEM_VINDO).isEmpty());
+        servico.executar(ana, "/join a"); assertEquals("a", eventos(ana, BEM_VINDO).get(0).campo(1));
+    }
+    @Test void salaInvalidaMostraExemplosReaisSemPublicarOComando() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); bruno.limpar();
+        var erro = assertThrows(IllegalArgumentException.class, () -> central.executar(ana, "/join sala"));
+        assertTrue(erro.getMessage().contains("/join estudos")); assertTrue(eventos(bruno, MENSAGEM).isEmpty());
+    }
 }

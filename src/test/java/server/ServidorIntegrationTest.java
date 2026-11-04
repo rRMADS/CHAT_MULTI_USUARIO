@@ -86,6 +86,32 @@ class ServidorIntegrationTest {
             }
         }
     }
+    @Test void comandosDaAjudaFuncionamPorSocketSemVirarMensagensPublicas() throws Exception {
+        var factory = new ConnectionFactory("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "");
+        new JdbcMensagemRepository(factory).inicializar(); Map<Sala, ChatService> salas = new LinkedHashMap<>();
+        for (var sala : List.of(Sala.GERAL, new Sala("cafe", "Café")))
+            salas.put(sala, new ChatService(new JdbcMensagemRepository(factory, sala), new ClientRegistry(), Clock.systemUTC(), 50, sala));
+        try (var servidor = new Servidor("127.0.0.1", 0, 20, new SalaService(salas))) {
+            servidor.iniciar();
+            try (var ana = new Cliente(servidor, "Ana Silva"); var bruno = new Cliente(servidor, "Bruno")) {
+                ana.enviar("/HELP"); assertTrue(ana.ateResposta("Comandos disponíveis").campo(0).contains("/join cafe"));
+                ana.enviar("/users"); assertTrue(ana.ateResposta("Participantes da sala").campo(0).contains("Bruno"));
+                ana.enviar("/salas"); assertTrue(ana.ateResposta("Salas disponíveis").campo(0).contains("Café"));
+                ana.enviar("/join inexistente"); assertTrue(ana.ate(ERRO).campo(0).contains("/join cafe"));
+                assertEquals("cafe", ana.entrarSala("Café").campo(1));
+                bruno.enviar("/ping"); Evento e;
+                do { e = bruno.ler(); assertNotEquals(MENSAGEM, e.tipo()); if (e.tipo() == SISTEMA) assertEquals(1, e.campos().size(), "Resposta de comando vazou para outra pessoa"); } while (e.tipo() != PONG);
+                ana.enviar("/historico 5"); assertEquals("0", ana.ate(HISTORICO_FIM).campo(0));
+                ana.enviar("/buscar texto"); assertEquals("0", ana.ate(HISTORICO_FIM).campo(0));
+                bruno.entrarSala("cafe"); ana.enviar("/msg Bruno Olá, em privado");
+                assertEquals("Olá, em privado", ana.ate(PRIVADA).campo(2)); assertEquals("Olá, em privado", bruno.ate(PRIVADA).campo(2));
+                ana.enviar("/sair"); boolean terminou = false;
+                for (int i = 0; i < 100; i++) { if (ana.reader.readLine() == null) { terminou = true; break; } }
+                assertTrue(terminou, "O comando de saída não encerrou a conexão");
+                bruno.enviar("/ajuda"); assertTrue(bruno.ateResposta("Comandos disponíveis").campo(0).contains("/quit"));
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
         final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
         Cliente(Servidor s, String nome) throws IOException {
@@ -97,6 +123,7 @@ class ServidorIntegrationTest {
         }
         Evento ler() throws IOException { String linha = reader.readLine(); if (linha == null) throw new EOFException(); return Protocolo.decodificar(linha); }
         Evento ate(Evento.Tipo tipo) throws IOException { for (int i = 0; i < 500; i++) { var e = ler(); if (e.tipo() == tipo) return e; } throw new IOException("Evento não recebido: " + tipo); }
+        Evento ateResposta(String titulo) throws IOException { for (int i = 0; i < 500; i++) { var e = ler(); if (e.tipo() == SISTEMA && e.campos().size() >= 2 && e.campo(1).equals(titulo)) return e; } throw new IOException("Resposta não recebida: " + titulo); }
         void enviar(String texto) { writer.println(texto); }
         Evento entrarSala(String id) throws IOException {
             enviar("/join " + id); var entrada = ate(BEM_VINDO); historico.clear();

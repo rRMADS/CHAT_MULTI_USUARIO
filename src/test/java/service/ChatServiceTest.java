@@ -97,5 +97,22 @@ class ChatServiceTest {
         assertThrows(IllegalArgumentException.class, () -> cliente("  ANA   SILVA  "));
         assertEquals(1, registry.quantidade());
     }
+    @Test void ajudaRetornaRespostaEstruturadaApenasAoSolicitante() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); ana.limpar(); bruno.limpar();
+        new CommandService(chat).executar(ana, "/ajuda");
+        assertEquals("Comandos disponíveis", ana.recebidos.get(0).campo(1));
+        assertTrue(ana.recebidos.get(0).campo(0).contains("\n")); assertTrue(bruno.recebidos.isEmpty());
+    }
+    @Test void usuariosTemRespostaVisivelSemBroadcastAosDemais() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); ana.limpar(); bruno.limpar();
+        new CommandService(chat).executar(ana, "/usuarios");
+        assertEquals(USUARIOS, ana.recebidos.get(0).tipo()); assertEquals("Participantes da sala", ana.recebidos.get(1).campo(1));
+        assertEquals("Ana\nBruno", ana.recebidos.get(1).campo(0)); assertTrue(bruno.recebidos.isEmpty());
+    }
+    @Test void separadoresCopiadosFuncionamEmMensagemPrivada() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); bruno.limpar();
+        new CommandService(chat).executar(ana, "/MSG\u00a0Bruno\u00a0Olá");
+        assertEquals("Olá", bruno.recebidos.get(0).campo(2));
+    }
     private FakeConexao cliente(String nome) { var c = new FakeConexao(nome); chat.conectar(c); return c; }
 }

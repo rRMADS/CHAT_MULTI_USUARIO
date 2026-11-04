@@ -14,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import protocol.Evento;
+import protocol.ComandoChat;
 import model.Usuario;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -185,8 +186,9 @@ public final class ClienteChat extends Application {
         });
         composicao = new HBox(10, destino, texto, enviarMensagem); composicao.setAlignment(Pos.CENTER_LEFT); composicao.getStyleClass().add("compose-box");
         destino.setOnAction(e -> { if (!atualizandoParticipantes) atualizarDestino(); });
-        Label ajuda = label("Enter para enviar  ·  /help para ver os comandos", "small-muted"); Region respiro = new Region(); HBox.setHgrow(respiro, Priority.ALWAYS);
-        HBox legenda = new HBox(ajuda, respiro, contador);
+        Label ajuda = label("Enter para enviar  ·  / para ver ajuda", "small-muted"); Region respiro = new Region(); HBox.setHgrow(respiro, Priority.ALWAYS);
+        Button ajudaComandos = botao("Comandos /", "command-help"); ajudaComandos.setOnAction(e -> comando("/help"));
+        HBox legenda = new HBox(10, ajuda, respiro, ajudaComandos, contador); legenda.setAlignment(Pos.CENTER_LEFT);
         VBox rodape = new VBox(9, indicadorDigitacao, aviso, composicao, legenda); rodape.getStyleClass().add("composer");
         principal.getChildren().addAll(header, ferramentas, conversa, rodape); raiz.setCenter(principal);
         trocar(raiz); janela.setTitle("Conexo · " + salaAtualNome + " · " + apelido + " · " + endereco); Platform.runLater(texto::requestFocus);
@@ -202,6 +204,7 @@ public final class ClienteChat extends Application {
             case ERRO -> {
                 if (conectado) {
                     aviso.setText(evento.campo(0)); aviso.getStyleClass().add("error");
+                    respostaComando("Não foi possível executar", evento.campo(0), true);
                     if (trocandoSala) {
                         trocandoSala = false; preencherSalas(); texto.setDisable(false); destino.setDisable(false);
                         enviarMensagem.setDisable(texto.getText().isBlank() || texto.getText().length() > 500);
@@ -215,6 +218,7 @@ public final class ClienteChat extends Application {
                 if (mensagens.getChildren().isEmpty()) {
                     sistema("Ainda não há mensagens por aqui. Que tal começar a conversa?"); vazio = mensagens.getChildren().get(0);
                 }
+                aviso.setText("Histórico carregado: " + evento.campo(0) + " mensagem(ns) na sala " + salaAtualNome + ".");
                 animacoes.aparecer(mensagens, 0, 6, 0); rolar();
             }
             case MENSAGEM -> {
@@ -224,7 +228,12 @@ public final class ClienteChat extends Application {
                 ocultarDigitacao();
             }
             case PRIVADA -> mensagem(evento.campo(0), evento.campo(2), evento.campo(3), evento.campo(1));
-            case SISTEMA -> sistema(evento.campo(0));
+            case SISTEMA -> {
+                if (evento.campos().size() >= 2) {
+                    respostaComando(evento.campo(1), evento.campo(0), false);
+                    aviso.setText("Resposta do comando exibida na conversa.");
+                } else sistema(evento.campo(0));
+            }
             case USUARIOS -> {
                 participantes.getChildren().clear(); online.setText("PARTICIPANTES  ·  " + evento.campos().size());
                 totalOnline.setText(evento.campos().size() == 1 ? "1 pessoa online" : evento.campos().size() + " pessoas online");
@@ -280,6 +289,18 @@ public final class ClienteChat extends Application {
         linha.getChildren().add(bolha); linha.setUserData(minha ? 22.0 : -22.0); adicionar(linha);
     }
     private void sistema(String texto) { Label l = label(texto, "system-message"); l.setWrapText(true); l.setMaxWidth(Double.MAX_VALUE); l.setAlignment(Pos.CENTER); adicionar(l); }
+    private void respostaComando(String titulo, String conteudo, boolean erro) {
+        if (vazio != null) { mensagens.getChildren().remove(vazio); vazio = null; }
+        Label cabecalho = label(titulo, "command-title"); Label corpo = label(conteudo, "command-body");
+        corpo.setWrapText(true); corpo.setMaxWidth(560);
+        VBox cartao = new VBox(10, cabecalho, corpo, label("Visível apenas para você", "small-muted"));
+        cartao.getStyleClass().add("command-reply"); cartao.setMaxWidth(600);
+        if (erro) cartao.getStyleClass().add("command-error");
+        ContextMenu menu = new ContextMenu(); MenuItem copiar = new MenuItem("Copiar resposta");
+        copiar.setOnAction(e -> { ClipboardContent c = new ClipboardContent(); c.putString(conteudo); Clipboard.getSystemClipboard().setContent(c); }); menu.getItems().add(copiar);
+        cartao.setOnContextMenuRequested(e -> menu.show(cartao, e.getScreenX(), e.getScreenY()));
+        HBox linha = new HBox(cartao); linha.setAlignment(Pos.CENTER_LEFT); adicionar(linha); rolar();
+    }
     private void adicionar(Node item) {
         boolean noFim = rolagem.getVvalue() > .93 || mensagens.getChildren().size() < 5
                 || rolagemSuave != null && rolagemSuave.getStatus() == Animation.Status.RUNNING;
@@ -376,15 +397,16 @@ public final class ClienteChat extends Application {
     }
     private void enviar() {
         if (conexao == null || !conectado) return;
-        String mensagem = texto.getText().strip();
+        String mensagem = ComandoChat.aparar(texto.getText());
         if (mensagem.isBlank() || mensagem.length() > 500 || mensagem.chars().anyMatch(Character::isISOControl)) {
             aviso.setText("Escreva uma mensagem de 1 a 500 caracteres, em uma linha."); return;
         }
         String para = destino.getValue();
-        if (mensagem.startsWith("/")) conexao.enviar(mensagem);
+        var pedido = ComandoChat.ler(mensagem);
+        if (pedido.isPresent()) conexao.enviar(pedido.get().paraLinha());
         else conexao.enviar("Todos".equals(para) ? mensagem : "/msg \"" + para + "\" " + mensagem);
         texto.clear(); aviso.getStyleClass().removeIf("error"::equals);
-        aviso.setText("Todos".equals(para) ? "Mensagens públicas ficam salvas no servidor." : "Mensagem privada · disponível apenas nesta sessão.");
+        aviso.setText(pedido.isPresent() ? "Comando enviado: " + pedido.get().nome() : "Todos".equals(para) ? "Mensagens públicas ficam salvas no servidor." : "Mensagem privada · disponível apenas nesta sessão.");
     }
     private void desconectado(String motivo) {
         conexao = null;

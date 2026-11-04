@@ -72,8 +72,9 @@ public final class ChatService {
         cliente.enviar(Evento.de(HISTORICO_FIM, Integer.toString(mensagens.size())));
     }
     public synchronized void publicarUsuarios() {
-        broadcast(new Evento(USUARIOS, registry.snapshot().stream().map(c -> c.getUsuario().nome()).sorted(String.CASE_INSENSITIVE_ORDER).toList()));
+        broadcast(new Evento(USUARIOS, usuariosOnline()));
     }
+    public List<String> usuariosOnline() { return registry.snapshot().stream().map(c -> c.getUsuario().nome()).sorted(String.CASE_INSENSITIVE_ORDER).toList(); }
     public int quantidadeUsuarios() { return registry.quantidade(); }
     public synchronized void digitando(ConexaoCliente origem) {
         boolean houveFalha = false;

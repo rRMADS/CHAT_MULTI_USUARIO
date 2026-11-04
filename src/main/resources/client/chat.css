@@ -63,6 +63,12 @@
 .avatar-3 { -fx-background-color: #d9e8e7; -fx-text-fill: #557f7d; }
 .person-avatar { -fx-min-width: 34; -fx-min-height: 34; -fx-pref-width: 34; -fx-pref-height: 34; }
 .system-message { -fx-font-size: 11px; -fx-text-fill: #8d9984; -fx-padding: 5 12; }
+.command-reply { -fx-background-color: #ffffff; -fx-padding: 17 20; -fx-background-radius: 14; -fx-border-color: #afc9a2; -fx-border-radius: 14; }
+.command-title { -fx-text-fill: #366246; -fx-font-size: 14px; -fx-font-weight: bold; }
+.command-body { -fx-text-fill: #36523f; -fx-font-size: 13px; -fx-line-spacing: 5px; }
+.command-error { -fx-background-color: #fff9f6; -fx-border-color: #d9b4a8; }
+.command-error .command-title { -fx-text-fill: #a45442; }
+.command-help { -fx-background-color: #e5eddf; -fx-text-fill: #4f714d; -fx-font-size: 11px; -fx-padding: 6 10; }
 .composer { -fx-padding: 0 30 22 30; }
 .compose-box { -fx-padding: 9; -fx-background-color: #ffffff; -fx-background-radius: 17; -fx-border-radius: 17; -fx-border-color: #e1e8da; -fx-effect: dropshadow(gaussian, #304c260c, 16, .02, 0, 3); }
 .compose-box .text-field { -fx-background-color: transparent; -fx-border-color: transparent; -fx-padding: 11 7; -fx-font-size: 13px; }
