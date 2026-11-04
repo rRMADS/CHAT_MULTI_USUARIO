@@ -46,6 +46,22 @@ class ServidorIntegrationTest {
         }
     }
     @Test void leituraLimitadaRecusaLinhaGigante() { assertThrows(IOException.class, () -> ClienteHandler.lerLinhaLimitada(new StringReader("x".repeat(2050)), 2048)); }
+    @Test void nomesComEspacosFuncionamNoHandshakeBroadcastPrivadaEHistorico() throws Exception {
+        try (var servidor = servidor(); var joao = new Cliente(servidor, "João Silva");
+             var maria = new Cliente(servidor, "Maria Souza"); var parcial = new Cliente(servidor, "Maria")) {
+            joao.enviar("Olá, pessoal!");
+            assertEquals("João Silva", joao.ate(MENSAGEM).campo(1));
+            assertEquals("João Silva", maria.ate(MENSAGEM).campo(1)); parcial.ate(MENSAGEM);
+            joao.enviar("/msg \"Maria Souza\" Somente para você");
+            assertEquals("Somente para você", maria.ate(PRIVADA).campo(2)); joao.ate(PRIVADA);
+            parcial.enviar("/ping"); Evento evento;
+            do { evento = parcial.ler(); assertNotEquals(PRIVADA, evento.tipo()); } while (evento.tipo() != PONG);
+            try (var novo = new Cliente(servidor, "Davi Santos")) {
+                assertEquals("João Silva", novo.historico.get(0).campo(1));
+                assertEquals("Olá, pessoal!", novo.historico.get(0).campo(2));
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
         final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
         Cliente(Servidor s, String nome) throws IOException {

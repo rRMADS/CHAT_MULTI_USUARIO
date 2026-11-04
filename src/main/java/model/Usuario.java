@@ -6,10 +6,14 @@ import java.util.Objects;
 public final class Usuario {
     private final String nome;
     public Usuario(String nome) {
-        if (nome == null || !nome.matches("[\\p{L}\\p{N}_-]{1,30}")) {
-            throw new IllegalArgumentException("Use um apelido de 1 a 30 letras, números, _ ou -, sem espaços.");
+        if (nome == null || nome.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("Use um apelido de 1 a 30 caracteres: letras, números, espaços, _ ou -.");
         }
-        this.nome = nome;
+        String normalizado = nome.strip().replaceAll(" +", " ");
+        if (normalizado.length() > 30 || !normalizado.matches("[\\p{L}\\p{N}_-]+(?: [\\p{L}\\p{N}_-]+)*")) {
+            throw new IllegalArgumentException("Use um apelido de 1 a 30 caracteres: letras, números, espaços, _ ou -.");
+        }
+        this.nome = normalizado;
     }
     public String nome() { return nome; }
     @Override public boolean equals(Object outro) {

@@ -26,7 +26,7 @@ O PDF exige um sistema cliente-servidor em Java. Uma implementação apenas em n
 | Histórico ao conectar | `ChatService.conectar` | Cliente novo recupera mensagens anteriores |
 | Desconexão isolada | `ClienteHandler` e filas por conexão | Queda de um cliente não interrompe os demais |
 | Repository/DAO separado | Interface `MensagemRepository` e implementação JDBC | SQL apenas no pacote JDBC e no script schema |
-| Pelo menos cinco testes unitários sem rede | Testes de domínio, serviço e protocolo | 21 testes unitários, além de 7 de integração |
+| Pelo menos cinco testes unitários sem rede | Testes de domínio, serviço e protocolo | Validações e concorrência sem rede, complementadas por testes de integração JDBC e TCP |
 | Script SQL | `src/main/resources/schema.sql` | Executado na inicialização do repository |
 | Relatório e vídeo | Documento de arquitetura e roteiro de apresentação | Relatório técnico inicial pronto; gravação do vídeo ainda pendente |
 

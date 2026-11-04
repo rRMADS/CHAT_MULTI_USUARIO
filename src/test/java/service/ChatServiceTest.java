@@ -71,5 +71,31 @@ class ChatServiceTest {
         } finally { executor.shutdownNow(); }
     }
     @Test void comandoDesconhecidoNaoViraMensagemPublica() { var ana = cliente("Ana"); var comandos = new CommandService(chat); assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana, "/naoexiste")); assertTrue(repository.buscarUltimas(50).isEmpty()); }
+    @Test void comandoPrivadoReconheceNomeCompletoSemEnviarAoNomeParcial() {
+        var origem = cliente("Maria Souza"); var ana = cliente("Ana"); var anaSilva = cliente("Ana Silva");
+        origem.limpar(); ana.limpar(); anaSilva.limpar();
+        new CommandService(chat).executar(origem, "/msg \"Ana Silva\" Olá, Ana!");
+        assertEquals("Ana Silva", anaSilva.recebidos.get(0).campo(1));
+        assertEquals("Olá, Ana!", anaSilva.recebidos.get(0).campo(2));
+        assertEquals(origem.recebidos, anaSilva.recebidos); assertTrue(ana.recebidos.isEmpty());
+    }
+    @Test void comandoPrivadoMantemCompatibilidadeComApelidoSemEspaco() {
+        var origem = cliente("Maria Souza"); var ana = cliente("Ana"); ana.limpar();
+        new CommandService(chat).executar(origem, "/msg Ana Olá!");
+        assertEquals(PRIVADA, ana.recebidos.get(0).tipo()); assertEquals("Olá!", ana.recebidos.get(0).campo(2));
+    }
+    @Test void comandoPrivadoRecusaAspasIncompletasOuAusenciaDeMensagem() {
+        var origem = cliente("Maria Souza"); var ana = cliente("Ana Silva"); ana.limpar();
+        var comandos = new CommandService(chat);
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(origem, "/msg \"Ana Silva Olá"));
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(origem, "/msg \"Ana Silva\""));
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(origem, "/msg \"Ana Silva\"Olá"));
+        assertTrue(ana.recebidos.isEmpty());
+    }
+    @Test void nomesComEspacosNormalizadosNaoPermitemDuplicatas() {
+        cliente("Ana Silva");
+        assertThrows(IllegalArgumentException.class, () -> cliente("  ANA   SILVA  "));
+        assertEquals(1, registry.quantidade());
+    }
     private FakeConexao cliente(String nome) { var c = new FakeConexao(nome); chat.conectar(c); return c; }
 }

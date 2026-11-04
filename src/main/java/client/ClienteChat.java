@@ -14,6 +14,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import protocol.Evento;
+import model.Usuario;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashSet;
@@ -95,8 +96,9 @@ public final class ClienteChat extends Application {
     }
     private void conectar() {
         if (conexao != null) return;
-        String usuario = nome.getText().strip(); String ip = host.getText().strip(); int numero;
-        if (!usuario.matches("[\\p{L}\\p{N}_-]{1,30}")) { erroLogin.setText("Use um apelido de 1 a 30 letras, números, _ ou -, sem espaços."); return; }
+        String usuario; String ip = host.getText().strip(); int numero;
+        try { usuario = new Usuario(nome.getText()).nome(); }
+        catch (IllegalArgumentException e) { erroLogin.setText(e.getMessage()); return; }
         try { numero = Integer.parseInt(porta.getText().strip()); if (numero < 1 || numero > 65535) throw new NumberFormatException(); }
         catch (NumberFormatException e) { erroLogin.setText("A porta deve ser um número entre 1 e 65535."); return; }
         if (ip.isBlank()) { erroLogin.setText("Informe o IP do servidor."); return; }
@@ -230,7 +232,7 @@ public final class ClienteChat extends Application {
         }
         String para = destino.getValue();
         if (mensagem.startsWith("/")) conexao.enviar(mensagem);
-        else conexao.enviar("Todos".equals(para) ? mensagem : "/msg " + para + " " + mensagem);
+        else conexao.enviar("Todos".equals(para) ? mensagem : "/msg \"" + para + "\" " + mensagem);
         texto.clear(); aviso.getStyleClass().removeIf("error"::equals);
         aviso.setText("Todos".equals(para) ? "Mensagens públicas ficam salvas no servidor." : "Mensagem privada · disponível apenas nesta sessão.");
     }

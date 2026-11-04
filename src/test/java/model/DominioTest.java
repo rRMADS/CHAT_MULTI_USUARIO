@@ -4,10 +4,23 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 class DominioTest {
     private final LocalDateTime horario = LocalDateTime.of(2026, 11, 4, 15, 30);
-    @Test void usuarioRejeitaNomeVazioOuComEspaco() {
+    @Test void usuarioRejeitaNomeVazioInvalidoOuLongo() {
         assertThrows(IllegalArgumentException.class, () -> new Usuario(""));
-        assertThrows(IllegalArgumentException.class, () -> new Usuario("Ana Silva"));
+        assertThrows(IllegalArgumentException.class, () -> new Usuario("   "));
+        assertThrows(IllegalArgumentException.class, () -> new Usuario("Ana\nSilva"));
+        assertThrows(IllegalArgumentException.class, () -> new Usuario("Ana\tSilva"));
+        assertThrows(IllegalArgumentException.class, () -> new Usuario("Ana\"Silva"));
         assertThrows(IllegalArgumentException.class, () -> new Usuario("a".repeat(31)));
+    }
+    @Test void usuarioAceitaNomeComEspacosEAcentos() {
+        assertEquals("João da Silva", new Usuario("João da Silva").nome());
+        assertEquals(30, new Usuario("A".repeat(14) + " " + "B".repeat(15)).nome().length());
+    }
+    @Test void usuarioNormalizaEspacosParaEvitarIdentidadesDuplicadas() {
+        var usuario = new Usuario("  Ana   Silva  ");
+        assertEquals("Ana Silva", usuario.nome());
+        assertEquals(new Usuario("ana silva"), usuario);
+        assertEquals(new Usuario("ana silva").hashCode(), usuario.hashCode());
     }
     @Test void nomesSaoIguaisSemDistinguirMaiusculas() {
         assertEquals(new Usuario("Ana"), new Usuario("ana"));

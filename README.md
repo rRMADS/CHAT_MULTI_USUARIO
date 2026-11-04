@@ -8,7 +8,7 @@ No [repositório do GitHub](https://github.com/rRMADS/CHAT_MULTI_USUARIO), use *
 
 É necessário ter **JDK 17 ou superior** (recomendado JDK 21) e internet na primeira execução. **Não é necessário instalar Maven ou IntelliJ:** o Maven Wrapper incluído prepara o Maven automaticamente. O H2 também é baixado como biblioteca, sem instalação de banco separada.
 
-Consulte o [passo a passo para o professor](INSTRUCOES_PROFESSOR.md), incluindo execução pelo terminal e solução de problemas.
+As instruções abaixo explicam como executar no Windows, conectar participantes e rodar os testes pelo terminal.
 
 ## Como abrir no Windows
 
@@ -28,6 +28,7 @@ O IP identifica o computador servidor; a porta identifica o serviço de chat. O 
 - Histórico público salvo em `data/chat.mv.db`, recuperado ao conectar novamente.
 - Interface em português, bolhas de mensagem, horário, lista de participantes e avisos de entrada e saída.
 - Entrada por IP/host e porta; recusa de apelidos duplicados.
+- Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
 - Busca no histórico público e recuperação das últimas mensagens.
 - Indicador de digitação na conversa geral.
@@ -48,9 +49,12 @@ Privadas não ficam no banco e desaparecem ao sair ou recarregar o histórico. M
 | `/history 50` | Carrega as últimas 50 mensagens públicas; aceita 1 a 200 |
 | `/buscar texto` | Busca literal, sem diferenciar maiúsculas, nas mensagens públicas; até 100 resultados |
 | `/msg Ana Olá` | Envia uma mensagem privada para Ana |
+| `/msg "Ana Silva" Olá` | Envia uma mensagem privada para um apelido com espaços |
 | `/quit` | Encerra a conexão |
 
 A busca mostra os resultados públicos e as novas mensagens recebidas depois da busca. Use **Últimas mensagens** para voltar. A interface mantém até 500 itens visuais; as mensagens públicas continuam no banco. Não há confirmação de leitura ou garantia de entrega ao destinatário desconectado.
+
+Ao selecionar uma pessoa na interface, o nome completo é reconhecido automaticamente. Se digitar `/msg` manualmente, coloque apelidos com espaços entre aspas duplas.
 
 ## Configuração
 
