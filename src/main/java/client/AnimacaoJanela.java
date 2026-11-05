@@ -35,7 +35,7 @@ final class AnimacaoJanela {
                 transicao = new Timeline(
                         new KeyFrame(Duration.ZERO, new KeyValue(janela.opacityProperty(), janela.getOpacity()),
                                 new KeyValue(conteudo.translateYProperty(), conteudo.getTranslateY())),
-                        new KeyFrame(Duration.millis(420), new KeyValue(janela.opacityProperty(), 1, ABRIR),
+                        new KeyFrame(Duration.millis(850), new KeyValue(janela.opacityProperty(), 1, ABRIR),
                                 new KeyValue(conteudo.translateYProperty(), 0, ABRIR)));
                 transicao.setOnFinished(e -> transicao = null); transicao.play();
             }
