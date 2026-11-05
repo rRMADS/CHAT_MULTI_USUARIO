@@ -9,6 +9,7 @@ import javafx.scene.*;
 import javafx.scene.control.*;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.input.InputEvent;
 import javafx.scene.layout.*;
 import javafx.scene.shape.*;
 import javafx.scene.paint.Color;
@@ -43,6 +44,7 @@ public final class ClienteChat extends Application {
     private boolean atualizandoSalas, trocandoSala;
     private boolean conectado, carregandoHistorico, atualizandoParticipantes, encerrando;
     private final Animacoes animacoes = new Animacoes();
+    private final AnimacaoJanela animacaoJanela = new AnimacaoJanela();
     private StackPane palco;
     private final Set<String> ids = new LinkedHashSet<>();
     private TextField nome, host, porta, busca, texto;
@@ -71,8 +73,10 @@ public final class ClienteChat extends Application {
         cena.getStylesheets().add(getClass().getResource("/client/chat.css").toExternalForm());
         janela.setScene(cena); janela.setMinWidth(Math.min(1040, area.getWidth()-24)); janela.setMinHeight(Math.min(760, area.getHeight()-40));
         pausaDigitacaoLocal.setOnFinished(e -> pararDigitacaoLocal());
+        cena.addEventFilter(InputEvent.ANY, e -> { if (encerrando) e.consume(); });
         janela.setOnCloseRequest(e -> { e.consume(); fecharJanela(); });
-        mostrarLogin(""); janela.show(); animacoes.abrirJanela(janela);
+        mostrarLogin(""); palco.applyCss(); palco.layout();
+        animacaoJanela.preparar(janela, palco); janela.show(); animacaoJanela.abrir();
     }
     private Label label(String texto, String estilo) { Label l = new Label(texto); l.getStyleClass().add(estilo); return l; }
     private Button botao(String texto, String estilo) { Button b = new Button(texto); b.getStyleClass().add(estilo); b.setCursor(Cursor.HAND); animacoes.prepararBotao(b); return b; }
@@ -82,10 +86,17 @@ public final class ClienteChat extends Application {
     private Label marca() {
         Label marca = label("conexo", "brand"); marca.setGraphic(Icones.criar(Feather.MESSAGE_CIRCLE, 30)); marca.setGraphicTextGap(12); return marca;
     }
-    private void trocar(Parent raiz) { animacoes.trocar(palco, raiz); }
+    private void trocar(Parent raiz) {
+        if (janela.isShowing()) animacoes.trocar(palco, raiz);
+        else palco.getChildren().setAll(raiz);
+    }
     private void prepararTela() {
+        pararEfeitos(); limparDigitacoes(); if (previa != null) previa.limpar();
+    }
+    private void pararEfeitos() {
         animacoes.prepararTela(); pausaDigitacaoLocal.stop(); digitacaoEnviada = false;
-        limparDigitacoes(); if (previa != null) previa.limpar();
+        digitacoes.values().forEach(d -> { d.expirar().stop(); d.balao().parar(); });
+        if (previa != null) previa.parar();
         rolagemAgendada = false;
         if (rolagemSuave != null) rolagemSuave.stop();
     }
@@ -121,7 +132,7 @@ public final class ClienteChat extends Application {
         formulario.getChildren().addAll(passo, heading, explicacao, espaco(8), label("Seu apelido", "field-label"), nome, rede, erroLogin, conectar, dica, espaco(6), privacidade);
         StackPane direita = new StackPane(formulario); direita.setPadding(new Insets(24)); HBox.setHgrow(direita, Priority.ALWAYS);
         HBox raiz = new HBox(apresentacao, direita); raiz.getStyleClass().add("login-root"); trocar(raiz);
-        animacoes.aparecer(formulario, 0, 8, 45);
+        if (janela.isShowing()) animacoes.aparecer(formulario, 0, 8, 45);
         Platform.runLater(nome::requestFocus);
     }
     private Region espaco(double altura) { Region r = new Region(); r.setMinHeight(altura); return r; }
@@ -367,7 +378,7 @@ public final class ClienteChat extends Application {
         rolagemAgendada = true;
         VBox conversaAtual = mensagens;
         Platform.runLater(() -> {
-            if (!conectado || conversaAtual != mensagens) return;
+            if (encerrando || !conectado || conversaAtual != mensagens) return;
             rolagemAgendada = false;
             if (rolagemSuave != null) rolagemSuave.stop();
             fluxoConversa.applyCss(); fluxoConversa.layout(); rolagem.layout();
@@ -506,11 +517,11 @@ public final class ClienteChat extends Application {
     private void sair() { ConexaoChat anterior = conexao; conexao = null; if (anterior != null) anterior.close(); mostrarLogin(""); janela.setTitle("Conexo · Chat multiusuário"); }
     private void fecharJanela() {
         if (encerrando) return;
-        encerrando = true; prepararTela(); palco.setDisable(true);
+        encerrando = true; pararEfeitos(); palco.setMouseTransparent(true);
         ConexaoChat anterior = conexao; conexao = null;
         if (anterior != null) anterior.close();
-        animacoes.fechar(palco, Platform::exit);
+        animacaoJanela.fechar(Platform::exit);
     }
-    @Override public void stop() { prepararTela(); if (conexao != null) conexao.close(); }
+    @Override public void stop() { animacaoJanela.parar(); prepararTela(); if (conexao != null) conexao.close(); }
     public static void main(String[] args) { launch(args); }
 }

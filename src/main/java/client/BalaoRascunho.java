@@ -73,6 +73,8 @@ final class BalaoRascunho extends Region {
         corpo.setText(""); setManaged(false); setVisible(false); setPrefHeight(0); setOpacity(0);
     }
 
+    void parar() { if (ajuste != null) ajuste.stop(); }
+
     @Override protected void layoutChildren() {
         double w = Math.min(getWidth(), largura.get());
         bolha.resizeRelocate(getWidth()-w, 0, w, bolha.prefHeight(w));

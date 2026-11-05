@@ -70,7 +70,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Tipografia equilibrada: mensagens em 16 px, campos em 15 px, participantes em 14 px e informações auxiliares de 12 a 13 px, com contraste reforçado.
 - Validação de mensagens, limite de 500 caracteres e contador.
 - Animações sempre ativas: transições curtas sem sobrepor telas, entrada discreta das mensagens, resposta ao pressionar botões, ilustração flutuante e pontos de digitação em ondas.
-- Abertura gradual da janela, troca de salas com transição e fechamento animado com encerramento da conexão.
+- Abertura e fechamento suaves da janela inteira, incluindo a moldura, com leve deslocamento do conteúdo e sem redimensionar a janela. Fechar durante a abertura continua a partir do ponto atual, sem piscar.
 - Ícones vetoriais em botões, mensagens privadas, menus e avisos; tema verde consistente em seletores, dicas e campos.
 - Movimento do ícone ao enviar e indicação de mensagem pública salva no servidor após a confirmação do histórico. Essa indicação não confirma leitura.
 - Avatares com iniciais, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens.
@@ -146,9 +146,11 @@ Pontos de entrada: `server.Servidor` e `client.Launcher`. Pelo terminal, use `mv
 | --- | --- | --- |
 | [AtlantaFX](https://github.com/mkpaz/atlantafx) | 2.0.1 | Tema Primer Light, com a paleta verde personalizada |
 | [Ikonli](https://github.com/kordamp/ikonli) + Feather | 12.4.0 | Ícones vetoriais nos controles e nas mensagens |
-| [AnimateFX](https://github.com/Typhon0/AnimateFX) | 1.3.0 | Fade de entrada, troca de telas e fechamento |
+| [AnimateFX](https://github.com/Typhon0/AnimateFX) | 1.3.0 | Fade de componentes e entrada de telas |
 
 As versões estão fixadas no `pom.xml` e são baixadas automaticamente. AtlantaFX 2.0.1 mantém a compatibilidade com Java 17; AnimateFX 1.3.0 é a versão publicada no Maven Central usada no projeto. As transições de movimento, rolagem, digitação e interação são combinadas com as animações nativas do JavaFX. Ao sair de uma tela, as animações anteriores são interrompidas.
+
+As transições da janela usam o JavaFX e são coordenadas separadamente das trocas de sala. O conteúdo é preparado antes da exibição; ao fechar, a tela preserva o último quadro enquanto a janela inteira desaparece. A conexão é encerrada e o aplicativo termina somente após a transição, sem reduzir a opacidade dos botões por um estado desabilitado intermediário.
 
 Para ver a atualização, feche os clientes antigos e abra `Cliente.cmd` novamente. Na primeira abertura após atualizar, é necessário ter internet para baixar as novas bibliotecas. O servidor continua usando as mesmas salas, porta e banco. Créditos e licenças estão em [TERCEIROS.md](docs/TERCEIROS.md).
 

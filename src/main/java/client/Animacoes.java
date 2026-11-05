@@ -1,14 +1,12 @@
 package client;
 
 import animatefx.animation.FadeIn;
-import animatefx.animation.FadeOut;
 import javafx.animation.*;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
-import javafx.stage.Stage;
 import javafx.util.Duration;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -24,14 +22,11 @@ final class Animacoes {
     private final Set<Animation> interacoes = Collections.newSetFromMap(new WeakHashMap<>());
     private final Map<Node, Animation> entradas = new IdentityHashMap<>();
     private Animation troca;
-    private Stage janelaAbrindo;
-    private Animation abertura;
 
     void prepararTela() {
         ativos.forEach(Animation::stop);
         ativos.clear(); entradas.clear();
         interacoes.forEach(Animation::stop); interacoes.clear();
-        if (abertura != null) { abertura.stop(); janelaAbrindo.setOpacity(1); abertura = null; janelaAbrindo = null; }
         if (troca != null) troca.stop();
         troca = null;
     }
@@ -83,22 +78,6 @@ final class Animacoes {
         var fade = new FadeTransition(Duration.seconds(2.2), node);
         fade.setFromValue(.72); fade.setToValue(1); fade.setAutoReverse(true);
         fade.setCycleCount(Animation.INDEFINITE); ativos.add(fade); fade.play(); return fade;
-    }
-
-    void abrirJanela(Stage janela) {
-        janela.setOpacity(0);
-        janelaAbrindo = janela;
-        abertura = new Timeline(new KeyFrame(Duration.millis(220), new KeyValue(janela.opacityProperty(), 1, Interpolator.EASE_OUT)));
-        abertura.setOnFinished(e -> { abertura = null; janelaAbrindo = null; }); abertura.play();
-    }
-
-    void fechar(Node raiz, Runnable concluido) {
-        var fade = new FadeOut(raiz).setSpeed(5).getTimeline();
-        var escala = new ScaleTransition(Duration.millis(200), raiz);
-        escala.setToX(.98); escala.setToY(.98); escala.setInterpolator(Interpolator.EASE_IN);
-        var saida = new ParallelTransition(fade, escala);
-        saida.setOnFinished(e -> { ativos.remove(saida); concluido.run(); });
-        ativos.add(saida); saida.play();
     }
 
     void envio(Node icone) {
