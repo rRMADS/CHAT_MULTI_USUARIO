@@ -8,7 +8,8 @@ import java.util.Optional;
 public record ComandoChat(String nome, String argumentos) {
     private static final Map<String, String> ALIASES = Map.of(
             "/", "/help", "/ajuda", "/help", "/usuarios", "/users",
-            "/historico", "/history", "/sair", "/quit", "/sala", "/join", "/rooms", "/salas");
+            "/historico", "/history", "/sair", "/quit", "/sala", "/join", "/rooms", "/salas",
+            "/clear", "/limpar", "/limparhistorico", "/limpar");
 
     public static Optional<ComandoChat> ler(String linha) {
         String limpa = aparar(linha);

@@ -10,6 +10,9 @@ import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
+import java.time.Instant;
+import java.util.Map;
+import java.util.IdentityHashMap;
 
 public final class ChatService {
     private final MensagemRepository repository;
@@ -17,6 +20,7 @@ public final class ChatService {
     private final Clock clock;
     private final int tamanhoHistorico;
     private final Sala sala;
+    private final Map<ConexaoCliente, Instant> confirmacoesLimpeza = new IdentityHashMap<>();
     public ChatService(MensagemRepository repository, ClientRegistry registry, Clock clock, int tamanhoHistorico) {
         this(repository, registry, clock, tamanhoHistorico, Sala.GERAL);
     }
@@ -36,6 +40,7 @@ public final class ChatService {
         } catch (RuntimeException e) { registry.remover(cliente); throw e; }
     }
     public synchronized void desconectar(ConexaoCliente cliente) {
+        confirmacoesLimpeza.remove(cliente);
         if (registry.remover(cliente)) {
             broadcast(Evento.de(SISTEMA, cliente.getUsuario().nome() + " saiu do chat."));
             publicarUsuarios();
@@ -65,6 +70,29 @@ public final class ChatService {
     public synchronized void buscarTexto(ConexaoCliente cliente, String texto) {
         if (texto.isBlank() || texto.length() > 100) throw new IllegalArgumentException("Busque um texto de 1 a 100 caracteres.");
         historico(cliente, repository.buscarPorTexto(texto, 100), "Busca: " + texto);
+    }
+    public synchronized void solicitarLimpeza(ConexaoCliente cliente) {
+        exigirConectado(cliente);
+        confirmacoesLimpeza.put(cliente, clock.instant().plusSeconds(30));
+        cliente.enviar(Evento.resposta("Confirmar limpeza do histórico",
+                "Isso apagará permanentemente todas as mensagens públicas da sala " + sala.nome()
+                + " para todos os participantes. Outras salas e mensagens privadas serão preservadas.\n\n"
+                + "Para confirmar, envie /limpar confirmar em até 30 segundos, sem trocar de sala.\n"
+                + "Para cancelar, envie /limpar cancelar ou aguarde o prazo."));
+    }
+    public synchronized void cancelarLimpeza(ConexaoCliente cliente) {
+        exigirConectado(cliente); confirmacoesLimpeza.remove(cliente);
+        cliente.enviar(Evento.resposta("Limpeza cancelada", "Nenhuma mensagem foi apagada."));
+    }
+    public synchronized void limparHistorico(ConexaoCliente cliente) {
+        exigirConectado(cliente);
+        Instant prazo = confirmacoesLimpeza.remove(cliente);
+        if (prazo == null || !clock.instant().isBefore(prazo))
+            throw new IllegalArgumentException("Confirmação ausente ou expirada. Use /limpar nesta sala antes de enviar /limpar confirmar.");
+        int removidas = repository.limpar();
+        confirmacoesLimpeza.clear();
+        // A exclusão e o evento ficam no mesmo lock dos envios: nenhum sucesso antes do commit.
+        broadcast(Evento.de(HISTORICO_LIMPO, sala.id(), sala.nome(), cliente.getUsuario().nome(), Integer.toString(removidas)));
     }
     private void historico(ConexaoCliente cliente, List<Mensagem> mensagens, String titulo) {
         cliente.enviar(Evento.de(HISTORICO_INICIO, titulo));
@@ -99,7 +127,7 @@ public final class ChatService {
         for (var c : registry.snapshot()) {
             try { c.enviar(evento); } catch (RuntimeException e) { falhas.add(c); }
         }
-        for (var c : falhas) { registry.remover(c); c.fechar(); }
+        for (var c : falhas) { registry.remover(c); confirmacoesLimpeza.remove(c); c.fechar(); }
         if (!falhas.isEmpty()) publicarUsuarios();
     }
 }

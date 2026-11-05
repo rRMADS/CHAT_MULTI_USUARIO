@@ -123,6 +123,33 @@ class ServidorIntegrationTest {
             }
         }
     }
+    @Test void limpezaConfirmadaPorSocketAvisaSalaIsolaOutrasEPersisteSemHistoricoAntigo() throws Exception {
+        var factory = new ConnectionFactory("jdbc:h2:mem:"+UUID.randomUUID()+";DB_CLOSE_DELAY=-1","sa","");
+        new JdbcMensagemRepository(factory).inicializar(); Map<Sala,ChatService> conversas = new LinkedHashMap<>();
+        for(var sala:List.of(Sala.GERAL,new Sala("estudos","Estudos")))
+            conversas.put(sala,new ChatService(new JdbcMensagemRepository(factory,sala),new ClientRegistry(),Clock.systemUTC(),50,sala));
+        try(var servidor=new Servidor("127.0.0.1",0,20,new SalaService(conversas))) {
+            servidor.iniciar();
+            try(var ana=new Cliente(servidor,"Ana"); var bruno=new Cliente(servidor,"Bruno"); var carla=new Cliente(servidor,"Carla")) {
+                carla.entrarSala("estudos"); carla.enviar("Preservada nos Estudos"); carla.ate(MENSAGEM);
+                ana.enviar("Mensagem antiga"); var antiga=ana.ate(MENSAGEM); bruno.ate(MENSAGEM);
+                ana.enviar("/limpar confirmar"); assertTrue(ana.ate(ERRO).campo(0).contains("/limpar"));
+                ana.enviar("/LIMPARHISTORICO"); assertTrue(ana.ateResposta("Confirmar limpeza do histórico").campo(0).contains("Geral"));
+                bruno.enviar("/ping"); Evento e;
+                do { e=bruno.ler(); assertNotEquals(HISTORICO_LIMPO,e.tipo()); } while(e.tipo()!=PONG);
+                ana.enviar("/CLEAR CONFIRMAR");
+                var limpeza=ana.ate(HISTORICO_LIMPO); assertEquals(List.of("geral","Geral","Ana","1"),limpeza.campos());
+                assertEquals(limpeza,bruno.ate(HISTORICO_LIMPO));
+                carla.enviar("/ping"); do { e=carla.ler(); assertNotEquals(HISTORICO_LIMPO,e.tipo()); } while(e.tipo()!=PONG);
+                try(var novo=new Cliente(servidor,"Davi")) {
+                    assertTrue(novo.historico.isEmpty()); novo.entrarSala("estudos");
+                    assertEquals("Preservada nos Estudos",novo.historico.get(0).campo(2));
+                }
+                ana.enviar("Depois da limpeza"); var nova=ana.ate(MENSAGEM);
+                assertTrue(Long.parseLong(nova.campo(0))>Long.parseLong(antiga.campo(0)));
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
         final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
         Cliente(Servidor s, String nome) throws IOException {

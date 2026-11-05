@@ -246,6 +246,16 @@ public final class ClienteChat extends Application {
                 aviso.setText("Histórico carregado: " + evento.campo(0) + " mensagem(ns) na sala " + salaAtualNome + ".");
                 animacoes.aparecer(mensagens, 0, 6, 0); rolar();
             }
+            case HISTORICO_LIMPO -> {
+                if (!salaAtualId.equals(evento.campo(0))) break;
+                mensagens.getChildren().removeIf(n -> Boolean.TRUE.equals(n.getProperties().get("mensagem-publica")));
+                ids.clear();
+                if (vazio != null) { mensagens.getChildren().remove(vazio); vazio = null; }
+                String retorno = evento.campo(2) + " limpou o histórico público da sala " + evento.campo(1)
+                        + ": " + evento.campo(3) + " mensagem(ns) apagada(s).";
+                subtitulo.setText("Histórico público limpo"); aviso.getStyleClass().removeIf("error"::equals); aviso.setText(retorno);
+                sistema(retorno); rolar();
+            }
             case MENSAGEM -> {
                 if (!ids.add(evento.campo(0))) break;
                 if (ids.size() > 1000) ids.remove(ids.iterator().next());
@@ -324,7 +334,8 @@ public final class ClienteChat extends Application {
         bolha.setOnContextMenuRequested(e -> menu.show(bolha, e.getScreenX(), e.getScreenY()));
         HBox linha = new HBox(10); linha.setAlignment(minha ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         if (!minha) linha.getChildren().add(avatar(remetente));
-        linha.getChildren().add(bolha); linha.setUserData(minha ? 6.0 : -6.0); adicionar(linha);
+        linha.getChildren().add(bolha); linha.setUserData(minha ? 6.0 : -6.0);
+        linha.getProperties().put("mensagem-publica", privadoPara == null); adicionar(linha);
     }
     private void sistema(String texto) { Label l = label(texto, "system-message"); l.setWrapText(true); l.setMaxWidth(Double.MAX_VALUE); l.setAlignment(Pos.CENTER); adicionar(l); }
     private void respostaComando(String titulo, String conteudo, boolean erro) {

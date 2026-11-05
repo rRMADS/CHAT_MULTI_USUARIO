@@ -39,6 +39,11 @@ public final class JdbcMensagemRepository implements MensagemRepository {
     }
     @Override public List<Mensagem> buscarUltimas(int quantidade) { return consultar(null, quantidade); }
     @Override public List<Mensagem> buscarPorTexto(String texto, int quantidade) { return consultar(texto, quantidade); }
+    @Override public int limpar() {
+        try (var c = factory.abrir(); var s = c.prepareStatement("DELETE FROM mensagem WHERE sala = ?")) {
+            s.setString(1, sala.id()); return s.executeUpdate();
+        } catch (SQLException e) { throw new PersistenciaException("Não foi possível confirmar a limpeza. Recarregue o histórico antes de tentar novamente.", e); }
+    }
     private List<Mensagem> consultar(String texto, int quantidade) {
         if (quantidade < 1 || quantidade > 200) throw new IllegalArgumentException("Histórico: escolha de 1 a 200 mensagens.");
         // LOCATE trata %, _ e aspas como texto literal, sem interpolação de SQL.

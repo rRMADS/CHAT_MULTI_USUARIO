@@ -94,6 +94,12 @@ H2 fica em `data/chat.mv.db`. A tabela `mensagem` contém ID sequencial, remeten
 
 A coluna `sala` delimita o histórico e a busca. O ID permanece sequencial no banco inteiro, podendo ter intervalos no histórico de uma sala. A migração idempotente adiciona essa coluna a bancos antigos com valor padrão `geral`, preservando as mensagens existentes. Todas as consultas de conteúdo incluem o filtro da sala; há índice composto `(sala, id)`.
 
+O comando `/limpar` registra em `ChatService` uma confirmação individual por conexão, válida por 30 segundos segundo o `Clock` do serviço. `/limpar confirmar` consome essa confirmação e chama `MensagemRepository.limpar()`, implementado em JDBC por `DELETE FROM mensagem WHERE sala = ?`. Não há reinício de IDs, exclusão de tabelas ou alteração do arquivo de configuração. `/limpar cancelar`, desconexão e troca de sala removem o pedido; uma limpeza concluída invalida outros pedidos anteriores da mesma sala.
+
+A exclusão usa o mesmo lock da gravação e da publicação. Somente após o retorno do JDBC o serviço publica `HISTORICO_LIMPO`, com identificador e nome da sala, nome do solicitante e quantidade apagada. A fila de cada cliente preserva a ordem entre mensagens anteriores, evento de limpeza e mensagens novas. Falhas na exclusão não publicam sucesso. Não há autorização por cargo nesta versão; qualquer participante conectado pode confirmar a limpeza da própria sala.
+
+O cliente marca as linhas públicas ao renderizar e remove somente essas linhas quando recebe `HISTORICO_LIMPO` da sala atual. Privadas em memória, rascunhos, participantes e conexão são mantidos; o conjunto de IDs visuais é limpo e um aviso informa quem executou a ação. Clientes e servidor precisam ser atualizados em conjunto para reconhecer o novo evento.
+
 A busca textual usa `LOCATE` com parâmetro; %, _ e aspas são literais. Avisos e digitação não ficam no banco. Privadas passam somente entre origem e destino conectados e não aparecem no histórico. A base não implementa contas, reserva persistente de apelidos ou criptografia TCP.
 
 ## Validação

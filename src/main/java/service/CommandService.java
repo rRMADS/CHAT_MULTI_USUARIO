@@ -23,6 +23,12 @@ public final class CommandService {
             },
             "/history", (c, a) -> chat.buscarHistorico(c, a.isBlank() ? 50 : Integer.parseInt(a)),
             "/buscar", chat::buscarTexto,
+            "/limpar", (c, a) -> {
+                if (a.isBlank()) chat.solicitarLimpeza(c);
+                else if (a.equalsIgnoreCase("confirmar")) chat.limparHistorico(c);
+                else if (a.equalsIgnoreCase("cancelar")) chat.cancelarLimpeza(c);
+                else throw new IllegalArgumentException("Use /limpar, /limpar confirmar ou /limpar cancelar. A limpeza vale somente para a sala atual.");
+            },
             "/msg", this::enviarPrivada,
             "/typing", (c, a) -> {
                 if (!a.isBlank() && !a.equalsIgnoreCase("stop")) throw new IllegalArgumentException("Estado de digitação inválido.");
@@ -39,6 +45,8 @@ public final class CommandService {
                 + "/users ou /usuarios — lista as pessoas desta sala\n"
                 + "/history 50 ou /historico 50 — carrega as últimas mensagens\n"
                 + "/buscar texto — procura no histórico da sala\n"
+                + "/limpar — solicita a limpeza permanente do histórico público desta sala\n"
+                + "/limpar confirmar — confirma em até 30 segundos; /limpar cancelar — cancela\n"
                 + "/msg \"Ana Silva\" Olá — envia uma mensagem privada\n"
                 + "/quit ou /sair — sai do chat";
     }

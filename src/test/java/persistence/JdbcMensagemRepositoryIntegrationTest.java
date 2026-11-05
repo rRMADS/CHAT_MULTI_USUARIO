@@ -44,4 +44,15 @@ class JdbcMensagemRepositoryIntegrationTest {
         assertEquals("Mensagem antiga", geral.buscarUltimas(10).get(0).conteudo());
         var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos")); assertTrue(estudos.buscarUltimas(10).isEmpty());
     }
+    @Test void limpezaPersisteNoArquivoRespeitaSalaENaoReutilizaIds() {
+        String url = "jdbc:h2:" + pasta.resolve("limpeza").toAbsolutePath();
+        var factory = new ConnectionFactory(url, "sa", ""); var geral = new JdbcMensagemRepository(factory); geral.inicializar();
+        var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos"));
+        var antiga = geral.salvar(mensagem("Texto da Geral")); estudos.salvar(mensagem("Texto dos Estudos"));
+        assertEquals(1, geral.limpar()); assertEquals(0, geral.limpar());
+        assertTrue(geral.buscarUltimas(50).isEmpty()); assertTrue(geral.buscarPorTexto("Geral",50).isEmpty());
+        assertTrue(criar(url).buscarUltimas(50).isEmpty());
+        assertEquals("Texto dos Estudos", estudos.buscarUltimas(50).get(0).conteudo());
+        assertTrue(geral.salvar(mensagem("Nova mensagem")).id() > antiga.id());
+    }
 }

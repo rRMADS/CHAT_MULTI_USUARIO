@@ -88,6 +88,7 @@ class SalaServiceTest {
             public model.Mensagem salvar(model.Mensagem m) { throw new persistence.PersistenciaException("Indisponível", new RuntimeException()); }
             public List<model.Mensagem> buscarUltimas(int n) { throw new persistence.PersistenciaException("Indisponível", new RuntimeException()); }
             public List<model.Mensagem> buscarPorTexto(String t, int n) { return List.of(); }
+            public int limpar() { throw new persistence.PersistenciaException("Falha simulada", new RuntimeException()); }
         };
         var geral = new ChatService(new InMemoryMensagemRepository(), new ClientRegistry(), Clock.systemUTC(), 50, Sala.GERAL);
         var destino = new ChatService(comFalha, new ClientRegistry(), Clock.systemUTC(), 50, estudos);
@@ -150,6 +151,17 @@ class SalaServiceTest {
         var erro = assertThrows(IllegalArgumentException.class, () -> servico.executar(ana, "/join Estudos"));
         assertTrue(erro.getMessage().contains("/join a")); assertTrue(eventos(ana, BEM_VINDO).isEmpty());
         servico.executar(ana, "/join a"); assertEquals("a", eventos(ana, BEM_VINDO).get(0).campo(1));
+    }
+    @Test void limpezaSoAfetaSalaAtualEATrocaCancelaPedido() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); var carla = cliente("Carla");
+        central.executar(ana,"Geral preservada"); central.trocarSala(bruno,"estudos"); central.trocarSala(carla,"estudos");
+        central.executar(bruno,"Estudos apagada"); central.executar(bruno,"/limpar");
+        central.trocarSala(bruno,"geral"); central.trocarSala(bruno,"estudos");
+        assertThrows(IllegalArgumentException.class, () -> central.executar(bruno,"/limpar confirmar"));
+        central.executar(bruno,"/limpar"); ana.limpar(); bruno.limpar(); carla.limpar(); central.executar(bruno,"/limpar confirmar");
+        assertTrue(eventos(ana,HISTORICO_LIMPO).isEmpty()); assertEquals(eventos(bruno,HISTORICO_LIMPO),eventos(carla,HISTORICO_LIMPO));
+        assertEquals("estudos",eventos(carla,HISTORICO_LIMPO).get(0).campo(0));
+        assertTrue(repositories.get(estudos).buscarUltimas(50).isEmpty()); assertEquals(1,repositories.get(Sala.GERAL).buscarUltimas(50).size());
     }
     @Test void salaInvalidaMostraExemplosReaisSemPublicarOComando() {
         var ana = cliente("Ana"); var bruno = cliente("Bruno"); bruno.limpar();

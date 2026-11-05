@@ -92,6 +92,9 @@ Digite o comando no campo de mensagens e pressione **Enter** ou clique em **Envi
 | `/users` ou `/usuarios` | Mostra os participantes da sala em uma resposta visível |
 | `/history 50` ou `/historico 50` | Carrega as últimas 50 mensagens públicas da sala atual; aceita 1 a 200 |
 | `/buscar texto` | Busca literal, sem diferenciar maiúsculas, nas mensagens públicas da sala atual; até 100 resultados |
+| `/limpar` | Solicita a limpeza permanente do histórico público da sala atual, sem apagar imediatamente |
+| `/limpar confirmar` | Confirma o pedido em até 30 segundos; apaga do banco e remove as mensagens públicas da tela de todos na sala |
+| `/limpar cancelar` | Cancela seu pedido de limpeza |
 | `/msg Ana Olá` | Envia uma mensagem privada para Ana |
 | `/msg "Ana Silva" Olá` | Envia uma mensagem privada para um apelido com espaços |
 | `/quit` ou `/sair` | Encerra a conexão |
@@ -99,6 +102,16 @@ Digite o comando no campo de mensagens e pressione **Enter** ou clique em **Envi
 Os comandos aceitam maiúsculas e espaços adicionais. Para a sala Café, funcionam `/join cafe` e `/join Café`. Para um nome com espaços, use, por exemplo, `/join "Sala da Turma"`. Se duas salas tiverem o mesmo nome, informe o identificador mostrado por `/salas`. Uma troca para a sala em que você já está também recebe confirmação.
 
 As respostas de ajuda e listagem ficam visíveis somente para quem pediu e não são gravadas no histórico. Se a sala não existir, a mensagem de erro sugere comandos reais disponíveis no servidor.
+
+### Limpar o histórico de uma sala
+
+Na sala desejada, envie `/limpar` pelo campo de mensagens. Leia o aviso e, em até **30 segundos**, envie `/limpar confirmar`. Para desistir, envie `/limpar cancelar` ou deixe o prazo expirar. Os aliases `/clear` e `/limparhistorico` funcionam da mesma maneira.
+
+A exclusão é permanente e afeta **todas as mensagens públicas da sala atual**, inclusive as que não estão carregadas na tela. Elas deixam de aparecer no histórico e nas buscas. Todos os participantes dessa sala recebem o aviso com o nome de quem limpou e a quantidade apagada. Outras salas, mensagens privadas da sessão e rascunhos locais são preservados. A conversa continua aberta e aceita novas mensagens normalmente.
+
+Nesta versão não há contas de administrador: **qualquer participante da sala pode solicitar e confirmar a limpeza**. A confirmação é individual, expira e é cancelada ao sair ou trocar de sala. Depois que alguém limpa, os demais pedidos anteriores são invalidados. O comando não aceita o nome de outra sala; entre na sala desejada antes de usá-lo.
+
+Reinicie o servidor e todos os clientes após atualizar, pois esta versão inclui o evento de sincronização da limpeza. A atualização não executa a limpeza automaticamente.
 
 A busca mostra os resultados públicos e as novas mensagens recebidas depois da busca. Use **Histórico** para voltar às últimas mensagens. A interface mantém até 500 itens visuais; as mensagens públicas continuam no banco. Não há confirmação de leitura ou garantia de entrega ao destinatário desconectado.
 

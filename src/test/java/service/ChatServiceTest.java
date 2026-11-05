@@ -35,6 +35,7 @@ class ChatServiceTest {
             public Mensagem salvar(Mensagem m) { throw new PersistenciaException("Falha simulada", new RuntimeException()); }
             public List<Mensagem> buscarUltimas(int n) { return List.of(); }
             public List<Mensagem> buscarPorTexto(String t, int n) { return List.of(); }
+            public int limpar() { throw new PersistenciaException("Falha simulada", new RuntimeException()); }
         };
         var servico = new ChatService(comFalha, new ClientRegistry(), clock, 50); var ana = new FakeConexao("Ana"); servico.conectar(ana); ana.limpar();
         assertThrows(PersistenciaException.class, () -> servico.enviarMensagem(ana, "oi")); assertTrue(ana.recebidos.isEmpty());
@@ -135,4 +136,79 @@ class ChatServiceTest {
         assertTrue(bruno.fechada); assertTrue(carla.recebidos.contains(Evento.de(DIGITANDO, "Ana", "stop")));
     }
     private FakeConexao cliente(String nome) { var c = new FakeConexao(nome); chat.conectar(c); return c; }
+
+    @Test void solicitarLimpezaNaoApagaNadaENaoAvisaOutrasPessoas() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); chat.enviarMensagem(ana,"Preservada"); ana.limpar(); bruno.limpar();
+        new CommandService(chat).executar(ana,"/limpar");
+        assertEquals("Confirmar limpeza do histórico", ana.recebidos.get(0).campo(1));
+        assertTrue(ana.recebidos.get(0).campo(0).contains("/limpar confirmar"));
+        assertEquals(1, repository.buscarUltimas(50).size()); assertTrue(bruno.recebidos.isEmpty());
+    }
+    @Test void limparExigePedidoPessoalEConfirmacaoENotificaTodaASala() {
+        var ana = cliente("Ana Silva"); var bruno = cliente("Bruno"); chat.enviarMensagem(ana,"Antiga");
+        var comandos = new CommandService(chat); comandos.executar(ana,"/limpar");
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(bruno,"/limpar confirmar"));
+        ana.limpar(); bruno.limpar(); comandos.executar(ana,"/limpar confirmar");
+        assertEquals(List.of(Evento.de(HISTORICO_LIMPO,"geral","Geral","Ana Silva","1")), ana.recebidos);
+        assertEquals(ana.recebidos,bruno.recebidos); assertTrue(repository.buscarUltimas(50).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana,"/limpar confirmar"));
+        assertEquals("Nova",chat.enviarMensagem(ana,"Nova").conteudo());
+    }
+    @Test void cancelarOuDesconectarInvalidaConfirmacao() {
+        var ana = cliente("Ana"); chat.enviarMensagem(ana,"Preservada"); var comandos = new CommandService(chat);
+        comandos.executar(ana,"/limpar"); comandos.executar(ana,"/limpar cancelar");
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana,"/limpar confirmar"));
+        comandos.executar(ana,"/limpar"); chat.desconectar(ana); chat.conectar(ana);
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana,"/limpar confirmar"));
+        assertEquals(1,repository.buscarUltimas(50).size());
+    }
+    @Test void confirmacaoExpiraExatamenteAosTrintaSegundos() {
+        var agora = new java.util.concurrent.atomic.AtomicReference<>(Instant.parse("2026-11-04T12:00:00Z"));
+        Clock relogio = new Clock() {
+            public ZoneId getZone() { return ZoneOffset.UTC; }
+            public Clock withZone(ZoneId zona) { return this; }
+            public Instant instant() { return agora.get(); }
+        };
+        var servico = new ChatService(repository,new ClientRegistry(),relogio,50); var ana = new FakeConexao("Ana"); servico.conectar(ana);
+        servico.enviarMensagem(ana,"Preservada"); servico.solicitarLimpeza(ana); agora.updateAndGet(t -> t.plusSeconds(30));
+        assertThrows(IllegalArgumentException.class, () -> servico.limparHistorico(ana)); assertEquals(1,repository.buscarUltimas(50).size());
+    }
+    @Test void limpezaPorOutraPessoaInvalidaPedidosAntigos() {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); chat.enviarMensagem(ana,"Antiga");
+        chat.solicitarLimpeza(ana); chat.solicitarLimpeza(bruno); chat.limparHistorico(ana); chat.enviarMensagem(ana,"Nova");
+        assertThrows(IllegalArgumentException.class, () -> chat.limparHistorico(bruno)); assertEquals("Nova",repository.buscarUltimas(50).get(0).conteudo());
+    }
+    @Test void falhaNaExclusaoNaoPublicaSucesso() {
+        MensagemRepository comFalha = new MensagemRepository() {
+            public Mensagem salvar(Mensagem m) { return repository.salvar(m); }
+            public List<Mensagem> buscarUltimas(int n) { return repository.buscarUltimas(n); }
+            public List<Mensagem> buscarPorTexto(String t,int n) { return repository.buscarPorTexto(t,n); }
+            public int limpar() { throw new PersistenciaException("Falha simulada",new RuntimeException()); }
+        };
+        var servico = new ChatService(comFalha,new ClientRegistry(),clock,50); var ana = new FakeConexao("Ana"); servico.conectar(ana);
+        servico.enviarMensagem(ana,"Preservada"); servico.solicitarLimpeza(ana); ana.limpar();
+        assertThrows(PersistenciaException.class, () -> servico.limparHistorico(ana)); assertTrue(ana.recebidos.isEmpty());
+        assertEquals(1,repository.buscarUltimas(50).size());
+    }
+    @Test void argumentosInvalidosNaoIniciamLimpezaENaoPermitemOutraSala() {
+        var ana = cliente("Ana"); chat.enviarMensagem(ana,"Preservada"); var comandos = new CommandService(chat);
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana,"/limpar estudos"));
+        assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana,"/limpar confirmar"));
+        assertEquals(1,repository.buscarUltimas(50).size());
+    }
+    @Test void enviosConcorrentesComLimpezaMantemBancoCoerenteComEventos() throws Exception {
+        var ana = cliente("Ana"); var bruno = cliente("Bruno"); chat.enviarMensagem(ana,"Antiga"); chat.solicitarLimpeza(ana);
+        ana.limpar(); bruno.limpar(); var inicio = new CountDownLatch(1); var executor = Executors.newFixedThreadPool(2);
+        try {
+            var limpar = executor.submit(() -> { try { inicio.await(); } catch (InterruptedException e) { throw new RuntimeException(e); } chat.limparHistorico(ana); });
+            var enviar = executor.submit(() -> { try { inicio.await(); } catch (InterruptedException e) { throw new RuntimeException(e); } for(int i=0;i<30;i++) chat.enviarMensagem(bruno,"Nova "+i); });
+            inicio.countDown(); limpar.get(5,TimeUnit.SECONDS); enviar.get(5,TimeUnit.SECONDS);
+            assertEquals(ana.recebidos,bruno.recebidos);
+            int marco = -1;
+            for(int i=0;i<bruno.recebidos.size();i++) if(bruno.recebidos.get(i).tipo()==HISTORICO_LIMPO) marco=i;
+            assertTrue(marco>=0);
+            var restantes = bruno.recebidos.subList(marco+1,bruno.recebidos.size()).stream().filter(e -> e.tipo()==MENSAGEM).map(e -> e.campo(0)).toList();
+            assertEquals(restantes,repository.buscarUltimas(50).stream().map(m -> m.id().toString()).toList());
+        } finally { executor.shutdownNow(); }
+    }
 }
