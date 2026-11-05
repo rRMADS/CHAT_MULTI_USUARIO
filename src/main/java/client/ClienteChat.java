@@ -130,8 +130,8 @@ public final class ClienteChat extends Application {
         Label dica = label("No mesmo computador, use 127.0.0.1.\nEm outra máquina, use o IP exibido pelo servidor.", "small-muted"); dica.setWrapText(true);
         Label privacidade = label("Várias salas · Uma rede de conversas", "small-muted"); privacidade.setGraphic(Icones.criar(Feather.HASH, 14));
         formulario.getChildren().addAll(passo, heading, explicacao, espaco(8), label("Seu apelido", "field-label"), nome, rede, erroLogin, conectar, dica, espaco(6), privacidade);
-        StackPane direita = new StackPane(formulario); direita.setPadding(new Insets(24)); HBox.setHgrow(direita, Priority.ALWAYS);
-        HBox raiz = new HBox(apresentacao, direita); raiz.getStyleClass().add("login-root"); trocar(raiz);
+        StackPane areaFormulario = new StackPane(formulario); areaFormulario.setPadding(new Insets(24)); HBox.setHgrow(areaFormulario, Priority.ALWAYS);
+        HBox raiz = new HBox(areaFormulario, apresentacao); raiz.getStyleClass().add("login-root"); trocar(raiz);
         if (janela.isShowing()) animacoes.aparecer(formulario, 0, 8, 45);
         Platform.runLater(nome::requestFocus);
     }
@@ -182,7 +182,7 @@ public final class ClienteChat extends Application {
         Button copiar = botao("Copiar endereço", "sidebar-button", Feather.COPY); copiar.setOnAction(e -> { ClipboardContent c = new ClipboardContent(); c.putString(endereco); Clipboard.getSystemClipboard().setContent(c); aviso.setText("Endereço copiado. Entre nesse servidor e escolha a sala " + salaAtualNome + "."); animacoes.aparecer(aviso, 0, 4, 0); });
         Button sair = botao("Sair do chat", "sidebar-button", Feather.LOG_OUT); sair.setOnAction(e -> sair());
         lateral.getChildren().addAll(marca, label("SALAS DO SERVIDOR", "sidebar-label"), escolherSala, geral, espaco(6), online, lista, voce, estadoConexao, copiar, sair);
-        raiz.setLeft(lateral);
+        raiz.setRight(lateral);
 
         VBox principal = new VBox();
         titulo = label("Sala " + salaAtualNome, "chat-title"); subtitulo = label("Um lugar para compartilhar ideias e se encontrar.", "muted");

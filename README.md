@@ -61,6 +61,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Salas configuráveis abertas automaticamente, com seleção na interface, contagem de participantes e troca sem reconectar.
 - Histórico público salvo em `data/chat.mv.db`, recuperado ao conectar novamente.
 - Interface em português, bolhas de mensagem, horário, lista de participantes e avisos de entrada e saída.
+- Painel lateral à direita desde a tela inicial; no chat, reúne salas, participantes e controles da conexão.
 - Entrada por IP/host e porta; recusa de apelidos duplicados.
 - Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
