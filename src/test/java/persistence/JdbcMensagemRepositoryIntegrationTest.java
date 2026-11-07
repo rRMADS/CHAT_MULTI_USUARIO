@@ -43,6 +43,10 @@ class JdbcMensagemRepositoryIntegrationTest {
         var geral = new JdbcMensagemRepository(factory); geral.inicializar(); geral.inicializar();
         assertEquals("Mensagem antiga", geral.buscarUltimas(10).get(0).conteudo());
         assertEquals(EmojiIdentificacao.SMILE,geral.buscarUltimas(10).get(0).remetente().emoji());
+        assertEquals(FormatoMensagem.TEXTO,geral.buscarUltimas(10).get(0).formato());
+        String markdown="## Depois da migração\n\n"+"Uma resposta longa. ".repeat(100);
+        geral.salvar(Mensagem.respostaIA(markdown,LocalDateTime.now()));
+        assertEquals(markdown.strip(),geral.buscarUltimas(1).get(0).conteudo()); assertEquals(FormatoMensagem.MARKDOWN_IA,geral.buscarUltimas(1).get(0).formato());
         var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos")); assertTrue(estudos.buscarUltimas(10).isEmpty());
     }
     @Test void limpezaPersisteNoArquivoRespeitaSalaENaoReutilizaIds() {
@@ -60,5 +64,12 @@ class JdbcMensagemRepositoryIntegrationTest {
         String url="jdbc:h2:"+pasta.resolve("emoji").toAbsolutePath();
         criar(url).salvar(new Mensagem(null,new Usuario("Ana Silva","unicorn"),"Olá",LocalDateTime.now()));
         assertEquals(EmojiIdentificacao.UNICORN,criar(url).buscarUltimas(1).get(0).remetente().emoji());
+    }
+    @Test void markdownSobreviveAReaberturaComoUmaUnicaMensagem() {
+        String url="jdbc:h2:"+pasta.resolve("markdown").toAbsolutePath();
+        String texto="## Receita\n\n1. **Leve à geladeira**\n2. Sirva.\n\n| Sugestão | Como fazer |\n| --- | --- |\n| Chocolate | Derreta e espalhe. |\n\n```java\n\tSystem.out.println(\"Olá\");\n```\n\n"+"Detalhes. ".repeat(100);
+        criar(url).salvar(Mensagem.respostaIA(texto,LocalDateTime.now()));
+        var mensagens=criar(url).buscarUltimas(50); assertEquals(1,mensagens.size()); assertEquals(texto.strip(),mensagens.get(0).conteudo()); assertEquals(FormatoMensagem.MARKDOWN_IA,mensagens.get(0).formato());
+        assertEquals(texto.strip(),criar(url).buscarPorTexto("geladeira",10).get(0).conteudo());
     }
 }

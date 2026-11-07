@@ -48,7 +48,11 @@ Também é possível digitar no campo de mensagens:
 
 Cada pergunta é independente. O servidor envia à Groq a pergunta e uma orientação fixa do assistente, **sem encaminhar automaticamente o histórico, os apelidos, os emojis ou a lista de participantes**. O serviço externo recebe e processa o texto enviado; o modo privado define a visibilidade dentro do chat, não significa execução local da IA. Consulte as [informações de dados da Groq](https://console.groq.com/docs/your-data).
 
-As respostas públicas aparecem como **Conexo IA**, com emoji de robô, e podem ser divididas em mensagens de até 500 caracteres. Quebras de linha são convertidas em espaços nesse modo para respeitar o formato das mensagens do projeto. O modo privado preserva a formatação na resposta. A IA não controla salas nem executa comandos.
+As respostas públicas aparecem como **Conexo IA**, com emoji de robô, em um único cartão de até 8.000 caracteres. Parágrafos, títulos, negrito, itálico, listas, citações, tabelas e blocos de código são formatados pelo cliente. Tabelas largas têm rolagem horizontal em janelas estreitas; blocos de código têm fonte própria e opção de cópia. A mesma apresentação é usada no modo privado e no popup. A IA não controla salas nem executa comandos.
+
+O botão **Copiar resposta** copia o texto original completo, incluindo a marcação Markdown, para uso em outros editores. O código pode ser copiado separadamente. HTML é tratado como texto e imagens remotas não são carregadas automaticamente.
+
+Ao instalar esta atualização, reinicie servidor e clientes. O servidor amplia automaticamente a coluna de conteúdo e adiciona o formato da mensagem no banco, preservando o histórico. Mensagens comuns continuam limitadas a uma linha e 500 caracteres. As respostas antigas que já haviam sido divididas e achatadas permanecem como foram salvas: as quebras de linha originais não podem ser reconstruídas com precisão. Faça uma nova pergunta para ver a apresentação corrigida.
 
 ## Limites e falhas
 

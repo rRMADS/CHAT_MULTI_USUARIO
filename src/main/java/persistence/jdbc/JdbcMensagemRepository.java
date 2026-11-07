@@ -28,9 +28,9 @@ public final class JdbcMensagemRepository implements MensagemRepository {
     }
     @Override public Mensagem salvar(Mensagem mensagem) {
         try (var c = factory.abrir(); var s = c.prepareStatement(
-                "INSERT INTO mensagem(remetente, conteudo, horario, sala, emoji) VALUES (?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
+                "INSERT INTO mensagem(remetente, conteudo, horario, sala, emoji, formato) VALUES (?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS)) {
             s.setString(1, mensagem.remetente().nome()); s.setString(2, mensagem.conteudo());
-            s.setTimestamp(3, Timestamp.valueOf(mensagem.horario())); s.setString(4, sala.id()); s.setString(5,mensagem.remetente().emoji().id()); s.executeUpdate();
+            s.setTimestamp(3, Timestamp.valueOf(mensagem.horario())); s.setString(4, sala.id()); s.setString(5,mensagem.remetente().emoji().id()); s.setString(6,mensagem.formato().name()); s.executeUpdate();
             try (var keys = s.getGeneratedKeys()) {
                 if (!keys.next()) throw new SQLException("ID não retornado");
                 return mensagem.comId(keys.getLong(1));
@@ -56,7 +56,7 @@ public final class JdbcMensagemRepository implements MensagemRepository {
             try (var rows = s.executeQuery()) {
                 List<Mensagem> mensagens = new ArrayList<>();
                 while (rows.next()) mensagens.add(new Mensagem(rows.getLong("id"), new Usuario(rows.getString("remetente"),rows.getString("emoji")),
-                        rows.getString("conteudo"), rows.getTimestamp("horario").toLocalDateTime()));
+                        rows.getString("conteudo"), rows.getTimestamp("horario").toLocalDateTime(),model.FormatoMensagem.valueOf(rows.getString("formato"))));
                 Collections.reverse(mensagens);
                 return List.copyOf(mensagens);
             }

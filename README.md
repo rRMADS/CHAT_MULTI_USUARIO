@@ -69,7 +69,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Balões de digitação na conversa: nome, avatar e pontos animados para cada pessoa digitando em público na sala atual.
 - Prévia local em um balão que cresce e quebra as linhas conforme você digita; fica visível só para você até enviar. Privadas usam a cor roxa de conversa privada; comandos não geram prévia de mensagem.
 - Tipografia equilibrada: mensagens em 16 px, campos em 15 px, participantes em 14 px e informações auxiliares de 12 a 13 px, com contraste reforçado.
-- Validação de mensagens, limite de 500 caracteres e contador.
+- Validação das mensagens dos participantes, limite de 500 caracteres em uma linha e contador.
 - Animações sempre ativas: transições curtas sem sobrepor telas, entrada discreta das mensagens, resposta ao pressionar botões, ilustração flutuante e pontos de digitação em ondas.
 - Abertura e fechamento suaves da janela inteira, incluindo a moldura, sem deslocar as bordas do conteúdo ou redimensionar a janela durante a animação. Fechar durante a abertura continua a partir do ponto atual, sem piscar.
 - Ícones vetoriais em botões, mensagens privadas, menus e avisos; paleta Violeta suave e temas Roxo (padrão), Claro e Escuro em campos, seletores e popups.
@@ -79,6 +79,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
 - Janela sem o limite mínimo anterior de 1040 × 760. Em tamanhos menores, os campos se reorganizam e o painel lateral abre pelo botão Salas; clique fora ou pressione Esc para fechá-lo. Em dimensões muito pequenas, a rolagem mantém os controles acessíveis.
 - Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor.
+- Respostas da IA em um único cartão, com parágrafos, títulos, negrito, listas, tabelas e código formatados; botão para copiar a resposta completa. O formato também é preservado no histórico público.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
 - Filas limitadas por cliente para que um destinatário lento não bloqueie o broadcast.

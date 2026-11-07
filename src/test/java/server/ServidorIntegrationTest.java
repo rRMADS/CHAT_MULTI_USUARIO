@@ -161,6 +161,20 @@ class ServidorIntegrationTest {
             }
         }
     }
+    @Test void respostaIaMultilinhaAtravessaSocketEmUmEventoEReapareceNoHistorico() throws Exception {
+        String texto="## Receita\n\n1. **Leve à geladeira**\n2. Sirva.\n\n| Sugestão | Como fazer |\n| --- | --- |\n| Chocolate | Derreta e espalhe. |\n\n```java\nSystem.out.println(\"Olá\");\n```\n\n"+"Detalhes. ".repeat(110).stripTrailing();
+        var r=new JdbcMensagemRepository(new ConnectionFactory("jdbc:h2:mem:"+UUID.randomUUID()+";DB_CLOSE_DELAY=-1","sa","")); r.inicializar();
+        var salas=new SalaService(Map.of(Sala.GERAL,new ChatService(r,new ClientRegistry(),Clock.fixed(java.time.Instant.parse("2026-11-07T19:23:00Z"),java.time.ZoneOffset.UTC),50)),new ia.AssistenteIA(p->texto));
+        try(var servidor=new Servidor("127.0.0.1",0,20,salas)) {
+            servidor.iniciar();
+            try(var ana=new Cliente(servidor,"Ana"); var bruno=new Cliente(servidor,"Bruno")) {
+                ana.enviar("/ia sala Receita"); ana.ate(MENSAGEM); bruno.ate(MENSAGEM);
+                var resposta=ana.ate(MENSAGEM); assertEquals(resposta,bruno.ate(MENSAGEM)); assertEquals(texto,resposta.campo(2)); assertEquals("MARKDOWN_IA",resposta.campo(5));
+                assertEquals(texto,ana.ate(IA_RESPOSTA).campo(3));
+                try(var novo=new Cliente(servidor,"Carla")) { assertEquals(2,novo.historico.size()); assertEquals(resposta,novo.historico.get(1)); }
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
         final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
         Cliente(Servidor s, String nome) throws IOException {

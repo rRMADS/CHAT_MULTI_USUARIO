@@ -18,7 +18,7 @@ public final class ClienteGroq implements ClienteIA {
     @Override public String responder(String pergunta) throws Exception {
         JsonObject corpo=new JsonObject(); corpo.addProperty("model",modelo); corpo.addProperty("max_completion_tokens",2048); corpo.addProperty("stream",false);
         JsonArray mensagens=new JsonArray();
-        mensagens.add(mensagem("system","Você é Conexo IA, assistente de um chat estudantil. Responda em português, de forma clara e concisa. Você só recebe a pergunta enviada; não tem acesso ao histórico nem aos participantes. Não invente acesso a ferramentas ou dados ao vivo. Limite a resposta a 6000 caracteres."));
+        mensagens.add(mensagem("system","Você é Conexo IA, assistente de um chat estudantil. Responda em português, de forma clara e concisa. Você só recebe a pergunta enviada; não tem acesso ao histórico nem aos participantes. Não invente acesso a ferramentas ou dados ao vivo. Use Markdown simples com parágrafos, títulos, listas e blocos de código quando necessário. Separe títulos, listas e tabelas com linhas em branco. Limite a resposta a 6000 caracteres."));
         mensagens.add(mensagem("user",pergunta)); corpo.add("messages",mensagens);
         var pedido=HttpRequest.newBuilder(endpoint).timeout(Duration.ofSeconds(25))
                 .header("Authorization","Bearer "+chave).header("Content-Type","application/json")

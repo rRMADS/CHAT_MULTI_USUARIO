@@ -193,3 +193,24 @@
 .chat-shell:compact .toolbar .button, .chat-shell:compact #abrir-painel { -fx-padding: 8 12; }
 .chat-shell:compact .toolbar .text-field { -fx-padding: 8 12; }
 .chat-shell:compact .composer .combo-box { -fx-padding: 2; }
+
+/* A IA preserva a estrutura do texto em um único cartão, na sala e no privado. */
+.markdown { -fx-spacing: 11; }
+.md-paragraph { -fx-line-spacing: 4; }
+.md-text { -fx-font-family: "Segoe UI", sans-serif; -fx-font-size: 16px; -fx-fill: -conexo-text; }
+.md-strong, .md-table-head .md-text { -fx-font-weight: bold; }
+.md-emphasis { -fx-font-style: italic; }
+.md-inline-code { -fx-font-family: "Consolas", monospace; -fx-font-size: 14px; -fx-fill: -conexo-accent; }
+.md-h1 .md-text { -fx-font-size: 24px; -fx-font-weight: bold; }
+.md-h2 .md-text { -fx-font-size: 21px; -fx-font-weight: bold; }
+.md-h3 .md-text { -fx-font-size: 18px; -fx-font-weight: bold; }
+.md-h4 .md-text, .md-h5 .md-text, .md-h6 .md-text { -fx-font-weight: bold; }
+.md-marker { -fx-text-fill: -conexo-accent; -fx-font-size: 16px; -fx-padding: 0; }
+.md-quote { -fx-padding: 5 0 5 13; -fx-border-color: transparent transparent transparent -conexo-accent; -fx-border-width: 0 0 0 3; }
+.md-table-head, .md-table-cell { -fx-padding: 10 12; -fx-border-color: -conexo-border; -fx-border-width: 0 1 1 0; -fx-background-color: -conexo-surface; }
+.md-table-head { -fx-background-color: -conexo-own; }
+.md-table-scroll, .md-table-scroll > .viewport { -fx-background-color: -conexo-surface; -fx-padding: 0; -fx-border-width: 0; }
+.md-code-block { -fx-padding: 10; -fx-background-color: -conexo-inset; -fx-background-radius: 10; }
+.md-code { -fx-font-family: "Consolas", monospace; -fx-font-size: 14px; -fx-border-width: 0; -fx-padding: 0; -fx-background-color: transparent; }
+.md-code .content { -fx-background-color: -conexo-inset; }
+.ai-answer-scroll, .ai-answer-scroll > .viewport { -fx-background-color: -conexo-surface; -fx-background-radius: 11; -fx-border-color: -conexo-border; -fx-border-radius: 11; -fx-padding: 0; }

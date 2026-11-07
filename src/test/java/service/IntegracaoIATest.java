@@ -41,7 +41,10 @@ class IntegracaoIATest {
         try(var c=new Cenario(p->"Resposta pública\nSegunda linha\t "+"texto ".repeat(160))) {
             c.salas.executar(c.ana,"/ia sala Minha pergunta"); aguardar(c.ana,IA_RESPOSTA);
             var mensagens=c.geral.buscarUltimas(50); assertEquals("Pergunta à IA: Minha pergunta",mensagens.get(0).conteudo());
-            assertTrue(mensagens.size()>2); assertTrue(mensagens.stream().allMatch(m->m.conteudo().length()<=500));
+            assertEquals(2,mensagens.size());
+            assertEquals("Resposta pública\nSegunda linha\t "+"texto ".repeat(160).stripTrailing(),mensagens.get(1).conteudo());
+            assertTrue(mensagens.get(1).conteudo().length()>500); assertEquals(FormatoMensagem.MARKDOWN_IA,mensagens.get(1).formato());
+            assertEquals("MARKDOWN_IA",eventos(c.bruno,MENSAGEM).get(1).campo(5));
             assertEquals("robot",mensagens.get(1).remetente().emoji().id());
             assertEquals(eventos(c.ana,MENSAGEM),eventos(c.bruno,MENSAGEM)); assertTrue(c.carla.recebidos.isEmpty()); assertTrue(c.estudos.buscarUltimas(50).isEmpty());
         }
@@ -80,6 +83,16 @@ class IntegracaoIATest {
         try(var c=new Cenario(p->{ throw new java.io.IOException("detalhe interno"); })) {
             c.salas.executar(c.ana,"/ia privado Oi"); aguardar(c.ana,IA_ERRO); assertFalse(eventos(c.ana,IA_ERRO).get(0).campo(0).contains("interno"));
             assertTrue(c.geral.buscarUltimas(50).isEmpty()); assertTrue(eventos(c.ana,IA_RESPOSTA).isEmpty());
+        }
+    }
+    @Test void respostaCompletaChegaAoHistoricoEBuscaSemPerderLinhas() throws Exception {
+        String markdown="## Receita\n\n1. **Primeiro passo**\n2. Segundo passo\n\n| Item | Quantidade |\n| --- | --- |\n| Limão | 2 |\n\n```java\nSystem.out.println(\"Olá\");\n```";
+        try(var c=new Cenario(p->markdown)) {
+            c.salas.executar(c.ana,"/ia sala Receita"); aguardar(c.ana,IA_RESPOSTA);
+            c.bruno.limpar(); c.salas.executar(c.bruno,"/history 50");
+            var resposta=eventos(c.bruno,MENSAGEM).get(1); assertEquals(markdown,resposta.campo(2)); assertEquals("MARKDOWN_IA",resposta.campo(5));
+            c.bruno.limpar(); c.salas.executar(c.bruno,"/buscar Limão"); assertEquals(markdown,eventos(c.bruno,MENSAGEM).get(0).campo(2));
+            assertEquals(resposta,Protocolo.decodificar(Protocolo.codificar(resposta)));
         }
     }
 }

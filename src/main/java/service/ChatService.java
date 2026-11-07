@@ -104,14 +104,8 @@ public final class ChatService {
     public synchronized long versaoHistorico() { return versaoHistorico; }
     public synchronized void publicarRespostaIA(String resposta, long versao) {
         if(versaoHistorico!=versao) throw new IllegalArgumentException("A sala teve o histórico limpo durante a consulta. A resposta da IA foi cancelada.");
-        String restante="Resposta gerada por IA: "+resposta.replaceAll("\\p{Cntrl}"," ");
-        while(!restante.isBlank()) {
-            int fim=Math.min(500,restante.length());
-            if(fim<restante.length() && Character.isHighSurrogate(restante.charAt(fim-1))) fim--;
-            if(fim<restante.length()) { int quebra=restante.lastIndexOf(' ',fim); if(quebra>300) fim=quebra; }
-            Mensagem salva=repository.salvar(new Mensagem(null,new Usuario("Conexo IA","robot"),restante.substring(0,fim),LocalDateTime.now(clock)));
-            broadcast(eventoMensagem(salva)); restante=restante.substring(fim).stripLeading();
-        }
+        Mensagem salva=repository.salvar(Mensagem.respostaIA(resposta,LocalDateTime.now(clock)));
+        broadcast(eventoMensagem(salva));
     }
     public synchronized void publicarUsuarios() {
         broadcast(new Evento(USUARIOS, usuariosOnline()));
@@ -134,7 +128,7 @@ public final class ChatService {
         if (houveFalha) publicarUsuarios();
     }
     private Evento eventoMensagem(Mensagem m) {
-        return Evento.de(MENSAGEM, m.id().toString(), m.remetente().nome(), m.conteudo(), m.horario().toString(),m.remetente().emoji().id());
+        return Evento.de(MENSAGEM, m.id().toString(), m.remetente().nome(), m.conteudo(), m.horario().toString(),m.remetente().emoji().id(),m.formato().name());
     }
     private void exigirConectado(ConexaoCliente c) {
         if (!registry.snapshot().contains(c)) throw new IllegalArgumentException("Conecte-se novamente para enviar mensagens.");

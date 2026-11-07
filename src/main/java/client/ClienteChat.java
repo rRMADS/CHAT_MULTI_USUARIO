@@ -326,10 +326,10 @@ public final class ClienteChat extends Application {
             case MENSAGEM -> {
                 if (!ids.add(evento.campo(0))) break;
                 if (ids.size() > 1000) ids.remove(ids.iterator().next());
-                mensagem(evento.campo(1), evento.campo(2), evento.campo(3), null, emojiDoEvento(evento,4));
+                mensagem(evento.campo(1), evento.campo(2), evento.campo(3), null, emojiDoEvento(evento,4), evento.campos().size()>5 && "MARKDOWN_IA".equals(evento.campo(5)));
                 ocultarDigitacao(evento.campo(1));
             }
-            case PRIVADA -> mensagem(evento.campo(0), evento.campo(2), evento.campo(3), evento.campo(1), emojiDoEvento(evento,4));
+            case PRIVADA -> mensagem(evento.campo(0), evento.campo(2), evento.campo(3), evento.campo(1), emojiDoEvento(evento,4), false);
             case PERFIS -> {
                 for(int i=0;i+1<evento.campos().size();i+=2) perfis.put(evento.campo(i).toLowerCase(Locale.ROOT), EmojiIdentificacao.porId(evento.campo(i+1)));
                 for(Node pessoa : participantes.getChildren()) {
@@ -341,7 +341,7 @@ public final class ClienteChat extends Application {
             case IA_INICIO -> { if(popupIA!=null) popupIA.iniciou(); }
             case IA_RESPOSTA -> {
                 if(popupIA!=null) popupIA.respondeu(evento.campo(3),false);
-                if("privado".equals(evento.campo(0))) respostaComando("Conexo IA · privado", "Você: "+evento.campo(2)+"\n\n"+evento.campo(3)+"\n\nResposta gerada por IA.",false);
+                if("privado".equals(evento.campo(0))) respostaIA(evento.campo(2),evento.campo(3));
             }
             case IA_ERRO -> {
                 if(popupIA!=null) popupIA.respondeu(evento.campo(0),true);
@@ -391,16 +391,24 @@ public final class ClienteChat extends Application {
             case PONG -> { }
         }
     }
-    private void mensagem(String remetente, String conteudo, String data, String privadoPara, EmojiIdentificacao emoji) {
+    private void mensagem(String remetente, String conteudo, String data, String privadoPara, EmojiIdentificacao emoji, boolean formatada) {
         if (vazio != null) { mensagens.getChildren().remove(vazio); vazio = null; }
         boolean minha = remetente.equalsIgnoreCase(apelido);
         String hora = LocalDateTime.parse(data).format(DateTimeFormatter.ofPattern("dd/MM · HH:mm"));
         Label autor = label(minha ? "Você" : remetente, "message-author");
         Label meta = label(hora, "message-meta");
         HBox cabecalho = new HBox(10, autor, meta); cabecalho.setAlignment(Pos.CENTER_LEFT);
-        Label corpo = label(conteudo, "message-body"); corpo.setWrapText(true); corpo.setMinWidth(0); corpo.setMaxWidth(580);
+        Node corpo;
+        if(formatada) corpo=new ConteudoMarkdown(conteudo);
+        else { Label textoCorpo=label(conteudo,"message-body"); textoCorpo.setWrapText(true); textoCorpo.setMinWidth(0); textoCorpo.setMaxWidth(580); corpo=textoCorpo; }
         VBox bolha = new VBox(8, cabecalho, corpo); bolha.getStyleClass().add(minha ? "bubble-own" : "bubble"); bolha.setMaxWidth(620);
-        bolha.maxWidthProperty().bind(rolagem.widthProperty().subtract(minha ? 66 : 122).map(w -> Math.max(180, Math.min(620, w.doubleValue()))));
+        bolha.maxWidthProperty().bind(rolagem.widthProperty().subtract(minha ? 66 : 122).map(w -> Math.max(180, Math.min(formatada ? 760 : 620, w.doubleValue()))));
+        if(formatada) {
+            bolha.getStyleClass().add("bubble-ai");
+            bolha.setPrefWidth(760);
+            FlowPane ferramentasIA=new FlowPane(12,8,label("Resposta gerada por IA", "small-muted"),ConteudoMarkdown.copiar(conteudo)); ferramentasIA.setAlignment(Pos.CENTER_LEFT);
+            bolha.getChildren().add(ferramentasIA);
+        }
         if (privadoPara != null) {
             bolha.getStyleClass().add("bubble-private");
             Label privada = label(minha ? "Privada para " + privadoPara : "Conversa privada · só para você", "private-label");
@@ -416,12 +424,22 @@ public final class ClienteChat extends Application {
         ContextMenu menu = new ContextMenu(); MenuItem copiar = new MenuItem("Copiar mensagem", Icones.criar(Feather.COPY, 14));
         copiar.setOnAction(e -> { ClipboardContent c = new ClipboardContent(); c.putString(conteudo); Clipboard.getSystemClipboard().setContent(c); }); menu.getItems().add(copiar);
         bolha.setOnContextMenuRequested(e -> menu.show(bolha, e.getScreenX(), e.getScreenY()));
-        HBox linha = new HBox(10); linha.setAlignment(minha ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
+        HBox linha = new HBox(10); linha.setAlignment(formatada ? Pos.TOP_LEFT : minha ? Pos.CENTER_RIGHT : Pos.CENTER_LEFT);
         if (!minha) linha.getChildren().add(new EmojiAvatar(emoji,42));
         linha.getChildren().add(bolha); if(minha) linha.getChildren().add(new EmojiAvatar(emoji,42)); linha.setUserData(minha ? 6.0 : -6.0);
         linha.getProperties().put("mensagem-publica", privadoPara == null); adicionar(linha);
     }
     private void sistema(String texto) { Label l = label(texto, "system-message"); l.setWrapText(true); l.setMaxWidth(Double.MAX_VALUE); l.setAlignment(Pos.CENTER); adicionar(l); }
+    private void respostaIA(String pergunta,String resposta) {
+        if(vazio!=null) { mensagens.getChildren().remove(vazio); vazio=null; }
+        Label cabecalho=label("Conexo IA · privado","command-title"); cabecalho.setGraphic(new EmojiAvatar(EmojiIdentificacao.ROBOT,36));
+        Label pedido=label("Você: "+pergunta,"muted"); pedido.setWrapText(true); pedido.setMinWidth(0);
+        Label privacidade=label("Visível apenas para você · Resposta gerada por IA","small-muted"); privacidade.setWrapText(true);
+        VBox cartao=new VBox(12,cabecalho,pedido,new ConteudoMarkdown(resposta),privacidade,ConteudoMarkdown.copiar(resposta));
+        cartao.getStyleClass().add("command-reply"); cartao.setMinWidth(0); cartao.setPrefWidth(760);
+        cartao.maxWidthProperty().bind(rolagem.widthProperty().subtract(60).map(w -> Math.max(180,Math.min(760,w.doubleValue()))));
+        adicionar(new HBox(cartao)); rolar();
+    }
     private void respostaComando(String titulo, String conteudo, boolean erro) {
         if (vazio != null) { mensagens.getChildren().remove(vazio); vazio = null; }
         Label cabecalho = label(titulo, "command-title"); Label corpo = label(conteudo, "command-body");
