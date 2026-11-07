@@ -77,7 +77,7 @@ public final class ClienteChat extends Application {
         temas.selecionar(temas.atual());
         janela = stage; janela.setTitle("Conexo · Chat multiusuário");
         var area = Screen.getPrimary().getVisualBounds();
-        palco = new StackPane(); moldura=new MolduraJanela(janela,palco,this::fecharJanela); temas.registrar(moldura); cena = new Scene(moldura, Math.min(1280, area.getWidth()-48), Math.min(850, area.getHeight()-70));
+        palco = new StackPane(); moldura=new MolduraJanela(janela,palco,this::fecharJanela,animacaoJanela::parar); temas.registrar(moldura); cena = new Scene(moldura, Math.min(1280, area.getWidth()-48), Math.min(850, area.getHeight()-70));
         cena.getStylesheets().add(getClass().getResource("/client/chat.css").toExternalForm());
         janela.setScene(cena); janela.setMinWidth(0); janela.setMinHeight(0);
         pausaDigitacaoLocal.setOnFinished(e -> pararDigitacaoLocal());
@@ -612,11 +612,12 @@ public final class ClienteChat extends Application {
     private void fecharJanela() {
         if(popupIA!=null) popupIA.close();
         if (encerrando) return;
+        if(moldura!=null) moldura.encerrarTransicoes();
         encerrando = true; pararEfeitos(); palco.setMouseTransparent(true);
         ConexaoChat anterior = conexao; conexao = null;
         if (anterior != null) anterior.close();
         animacaoJanela.fechar(Platform::exit);
     }
-    @Override public void stop() { animacaoJanela.parar(); prepararTela(); if (conexao != null) conexao.close(); }
+    @Override public void stop() { if(moldura!=null) moldura.encerrarTransicoes(); animacaoJanela.parar(); prepararTela(); if (conexao != null) conexao.close(); }
     public static void main(String[] args) { launch(args); }
 }

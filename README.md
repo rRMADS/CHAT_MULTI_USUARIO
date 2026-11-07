@@ -77,6 +77,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Emojis 3D com brilho nas mensagens e na lista de participantes, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens. O emoji é preservado no histórico público.
 - Escolha de tema com três botões visuais (estrela, sol e lua), destaque deslizante e reação dos ícones ao passar o mouse. Aplicada sem desconectar e lembrada neste computador em `cliente.properties`.
 - Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
+- Deslize de 500 ms ao maximizar e restaurar a janela, mantendo o tamanho e a posição anteriores. Minimizar usa um movimento para baixo com fade de 240 ms; o retorno da barra de tarefas desliza por 300 ms. Cliques rápidos podem inverter a transição sem reiniciar de outra posição.
 - Janela sem o limite mínimo anterior de 1040 × 760. Em tamanhos menores, os campos se reorganizam e o painel lateral abre pelo botão Salas; clique fora ou pressione Esc para fechá-lo. Em dimensões muito pequenas, a rolagem mantém os controles acessíveis.
 - Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor.
 - Respostas da IA em um único cartão, com parágrafos, títulos, negrito, listas, tabelas e código formatados; botão para copiar a resposta completa. O formato também é preservado no histórico público.
