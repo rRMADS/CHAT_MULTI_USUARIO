@@ -62,7 +62,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Histórico público salvo em `data/chat.mv.db`, recuperado ao conectar novamente.
 - Interface em português, bolhas de mensagem, horário, lista de participantes e avisos de entrada e saída.
 - Painel lateral à direita desde a tela inicial; no chat, reúne salas, participantes e controles da conexão.
-- Entrada por IP/host e porta; popup com apelido e emoji 3D obrigatório, prévia com brilho e recusa de apelidos duplicados. O apelido Conexo IA é reservado ao assistente.
+- Entrada por IP/host e porta; popup com apelido e emoji 3D obrigatório, 48 opções com busca e categorias, prévia com brilho e recusa de apelidos duplicados. O apelido Conexo IA é reservado ao assistente.
 - Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
 - Busca no histórico público e recuperação das últimas mensagens.
@@ -77,7 +77,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Emojis 3D com brilho nas mensagens e na lista de participantes, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens. O emoji é preservado no histórico público.
 - Escolha de tema com três botões visuais (estrela, sol e lua), destaque deslizante e reação dos ícones ao passar o mouse. Aplicada sem desconectar e lembrada neste computador em `cliente.properties`.
 - Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
-- Maximizar, restaurar e minimizar usam o comportamento nativo do Windows. Um acabamento discreto no conteúdo é aplicado após o layout estabilizar, sem mover a janela por animação, esticar letras ou deixar transparência residual.
+- Maximizar e restaurar usam o comportamento nativo do Windows, com um acabamento discreto no conteúdo após o layout estabilizar. Minimizar aplica um deslize curto com desaparecimento gradual em 240 ms; o retorno dura 300 ms. Na janela maximizada, apenas a opacidade é animada. As transições não alteram largura ou altura e são interrompidas ao fechar.
 - Janela sem o limite mínimo anterior de 1040 × 760. Em tamanhos menores, os campos se reorganizam e o painel lateral abre pelo botão Salas; clique fora ou pressione Esc para fechá-lo. Em dimensões muito pequenas, a rolagem mantém os controles acessíveis.
 - Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor. Configure a chave uma vez por **ConfigurarIA.cmd** para que seja lembrada ao abrir **Servidor.cmd** pelo Explorador.
 - Respostas da IA em um único cartão, com parágrafos, títulos, negrito, listas, tabelas e código formatados; botão para copiar a resposta completa. O formato também é preservado no histórico público.

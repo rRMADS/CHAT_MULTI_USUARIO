@@ -214,3 +214,4 @@
 .md-code { -fx-font-family: "Consolas", monospace; -fx-font-size: 14px; -fx-border-width: 0; -fx-padding: 0; -fx-background-color: transparent; }
 .md-code .content { -fx-background-color: -conexo-inset; }
 .ai-answer-scroll, .ai-answer-scroll > .viewport { -fx-background-color: -conexo-surface; -fx-background-radius: 11; -fx-border-color: -conexo-border; -fx-border-radius: 11; -fx-padding: 0; }
+.emoji-grid-scroll, .emoji-grid-scroll > .viewport { -fx-background-color: transparent; -fx-padding: 0; -fx-border-width: 0; }

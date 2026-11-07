@@ -19,7 +19,7 @@ final class MolduraJanela extends StackPane {
     private final HBox barra=new HBox();
     private final List<Region> bordas=new ArrayList<>();
     private double mouseX,mouseY,inicioX,inicioY,inicioLargura,inicioAltura;
-    private boolean arrastando;
+    private boolean arrastando,redimensionando;
     private static final double ALCANCE=6;
 
     MolduraJanela(Stage janela,StackPane conteudo,Runnable fechar) {
@@ -46,8 +46,9 @@ final class MolduraJanela extends StackPane {
         Cursor[] cursores={Cursor.NW_RESIZE,Cursor.N_RESIZE,Cursor.NE_RESIZE,Cursor.E_RESIZE,Cursor.SE_RESIZE,Cursor.S_RESIZE,Cursor.SW_RESIZE,Cursor.W_RESIZE};
         for(int i=0;i<8;i++) {
             final int direcao=i; Region borda=new Region(); borda.setManaged(false); borda.setCursor(cursores[i]); borda.setPickOnBounds(true);
-            borda.setOnMousePressed(e -> { deslize.prepararRedimensionamento(); capturar(e); e.consume(); });
-            borda.setOnMouseDragged(e -> { redimensionar(direcao,e.getScreenX()-mouseX,e.getScreenY()-mouseY); e.consume(); });
+            borda.setOnMousePressed(e -> { redimensionando=deslize.interagivel(); if(redimensionando) { deslize.prepararRedimensionamento(); capturar(e); } e.consume(); });
+            borda.setOnMouseDragged(e -> { if(redimensionando && deslize.interagivel()) redimensionar(direcao,e.getScreenX()-mouseX,e.getScreenY()-mouseY); e.consume(); });
+            borda.setOnMouseReleased(e -> redimensionando=false);
             bordas.add(borda); getChildren().add(borda);
         }
         Rectangle recorte=new Rectangle(); recorte.widthProperty().bind(widthProperty()); recorte.heightProperty().bind(heightProperty()); setClip(recorte);

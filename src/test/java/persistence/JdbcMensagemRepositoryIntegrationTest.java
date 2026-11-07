@@ -65,6 +65,13 @@ class JdbcMensagemRepositoryIntegrationTest {
         criar(url).salvar(new Mensagem(null,new Usuario("Ana Silva","unicorn"),"Olá",LocalDateTime.now()));
         assertEquals(EmojiIdentificacao.UNICORN,criar(url).buscarUltimas(1).get(0).remetente().emoji());
     }
+    @Test void novosEmojisTambemSaoPreservadosNoHistorico() {
+        String url="jdbc:h2:"+pasta.resolve("novos-emojis").toAbsolutePath();
+        var r=criar(url);
+        for(var emoji:java.util.List.of(EmojiIdentificacao.PARTY,EmojiIdentificacao.DRAGON,EmojiIdentificacao.GAME,EmojiIdentificacao.HEART))
+            r.salvar(new Mensagem(null,new Usuario("Ana Silva",emoji.id()),"Olá com "+emoji.nome(),LocalDateTime.now()));
+        assertEquals(java.util.List.of("party","dragon","game","heart"),criar(url).buscarUltimas(10).stream().map(m->m.remetente().emoji().id()).toList());
+    }
     @Test void markdownSobreviveAReaberturaComoUmaUnicaMensagem() {
         String url="jdbc:h2:"+pasta.resolve("markdown").toAbsolutePath();
         String texto="## Receita\n\n1. **Leve à geladeira**\n2. Sirva.\n\n| Sugestão | Como fazer |\n| --- | --- |\n| Chocolate | Derreta e espalhe. |\n\n```java\n\tSystem.out.println(\"Olá\");\n```\n\n"+"Detalhes. ".repeat(100);

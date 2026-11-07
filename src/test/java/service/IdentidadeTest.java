@@ -9,6 +9,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static protocol.Evento.Tipo.*;
 
 class IdentidadeTest {
+    @Test void catalogoCompletoTemRecursosLocaisValidosEIdsUnicos() throws Exception {
+        var ids=new java.util.HashSet<String>();
+        assertTrue(EmojiIdentificacao.values().length>=48);
+        for(var emoji:EmojiIdentificacao.values()) {
+            assertTrue(ids.add(emoji.id()),"Emoji repetido: "+emoji.id()); assertTrue(emoji.id().length()<=32); assertNotNull(emoji.categoria());
+            try(var recurso=getClass().getResourceAsStream(emoji.recurso())) {
+                assertNotNull(recurso,"Imagem ausente: "+emoji.id());
+                assertArrayEquals(new byte[]{(byte)0x89,80,78,71,13,10,26,10},recurso.readNBytes(8),"PNG inválido: "+emoji.id());
+            }
+            var usuario=Protocolo.identificar(Protocolo.apresentar(new Usuario("Ana Silva",emoji.id())));
+            assertEquals(emoji,usuario.emoji());
+        }
+    }
     @Test void handshakeExigeEmojiConhecidoERecusaClienteAntigo() {
         var u=new Usuario("Ana Silva","unicorn"); assertEquals(EmojiIdentificacao.UNICORN,Protocolo.identificar(Protocolo.apresentar(u)).emoji());
         for(String linha:new String[]{"Ana",Protocolo.codificar(Evento.de(APRESENTACAO,"Ana")),Protocolo.codificar(Evento.de(APRESENTACAO,"Ana","")),Protocolo.codificar(Evento.de(APRESENTACAO,"Ana","https://imagem"))})
