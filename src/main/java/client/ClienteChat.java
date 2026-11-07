@@ -52,6 +52,7 @@ public final class ClienteChat extends Application {
     private final Animacoes animacoes = new Animacoes();
     private final AnimacaoJanela animacaoJanela = new AnimacaoJanela();
     private StackPane palco;
+    private MolduraJanela moldura;
     private final Set<String> ids = new LinkedHashSet<>();
     private TextField nome, host, porta, busca, texto;
     private Label erroLogin, aviso, titulo, subtitulo, contador, online, estadoConexao, totalOnline;
@@ -76,9 +77,9 @@ public final class ClienteChat extends Application {
         temas.selecionar(temas.atual());
         janela = stage; janela.setTitle("Conexo · Chat multiusuário");
         var area = Screen.getPrimary().getVisualBounds();
-        palco = new StackPane(); temas.registrar(palco); cena = new Scene(palco, Math.min(1280, area.getWidth()-48), Math.min(850, area.getHeight()-70));
+        palco = new StackPane(); moldura=new MolduraJanela(janela,palco,this::fecharJanela); temas.registrar(moldura); cena = new Scene(moldura, Math.min(1280, area.getWidth()-48), Math.min(850, area.getHeight()-70));
         cena.getStylesheets().add(getClass().getResource("/client/chat.css").toExternalForm());
-        janela.setScene(cena); janela.setMinWidth(Math.min(1040, area.getWidth()-24)); janela.setMinHeight(Math.min(760, area.getHeight()-40));
+        janela.setScene(cena); janela.setMinWidth(0); janela.setMinHeight(0);
         pausaDigitacaoLocal.setOnFinished(e -> pararDigitacaoLocal());
         cena.addEventFilter(InputEvent.ANY, e -> { if (encerrando) e.consume(); });
         janela.setOnCloseRequest(e -> { e.consume(); fecharJanela(); });
@@ -111,7 +112,7 @@ public final class ClienteChat extends Application {
         prepararTela();
         conectado = false;
         salasDisponiveis.clear(); trocandoSala = false;
-        VBox apresentacao = new VBox(18); apresentacao.getStyleClass().add("intro"); apresentacao.setPrefWidth(470); apresentacao.setMinWidth(410);
+        VBox apresentacao = new VBox(18); apresentacao.getStyleClass().add("intro"); apresentacao.setPrefWidth(470); apresentacao.setMinWidth(410); apresentacao.setMaxWidth(470);
         Label marca = marca();
         Label selo = label("UM ESPAÇO PARA SE CONECTAR", "eyebrow");
         Label chamada = label("Boas conversas\ncomeçam com\numa conexão.", "hero");
@@ -120,15 +121,15 @@ public final class ClienteChat extends Application {
         Label rodape = label("Seu espaço para trocar ideias.", "intro-footer");
         apresentacao.getChildren().addAll(marca, selo, chamada, descricao, desenho, rodape);
 
-        VBox formulario = new VBox(12); formulario.getStyleClass().add("login-form"); formulario.setMaxWidth(540); formulario.setMaxHeight(Region.USE_PREF_SIZE);
+        VBox formulario = new VBox(12); formulario.getStyleClass().add("login-form"); formulario.setMaxWidth(540); formulario.setMinWidth(0); formulario.setMinHeight(Region.USE_PREF_SIZE); formulario.setMaxHeight(Region.USE_PREF_SIZE);
         Label passo = label("OLÁ, QUE BOM TER VOCÊ AQUI", "eyebrow-green");
         Label heading = label("Entre na conversa", "login-title");
         Label explicacao = label("Escolha seu apelido e o endereço do servidor.\nCada pessoa entra pelo próprio computador.", "muted");
-        explicacao.setWrapText(true);
+        explicacao.setWrapText(true); explicacao.setMinHeight(Region.USE_PREF_SIZE);
         nome = new TextField(apelido == null ? "" : apelido); nome.setPromptText("Como você quer ser chamado?"); nome.setId("apelido");
         host = new TextField("127.0.0.1"); host.setPromptText("Ex.: 192.168.1.10"); host.setId("ip");
         porta = new TextField("5050"); porta.setId("porta"); porta.setPrefWidth(100); porta.setMaxWidth(110);
-        VBox campoHost = new VBox(7, label("IP ou nome do servidor", "field-label"), host); HBox.setHgrow(campoHost, Priority.ALWAYS);
+        VBox campoHost = new VBox(7, label("IP ou nome do servidor", "field-label"), host); campoHost.setMinWidth(0); host.setMinWidth(0); HBox.setHgrow(campoHost, Priority.ALWAYS);
         HBox rede = new HBox(12, campoHost, new VBox(7, label("Porta", "field-label"), porta));
         erroLogin = label(mensagem, "error"); erroLogin.setWrapText(true);
         erroLogin.managedProperty().bind(erroLogin.textProperty().isNotEmpty()); erroLogin.visibleProperty().bind(erroLogin.managedProperty());
@@ -137,8 +138,17 @@ public final class ClienteChat extends Application {
         Label dica = label("No mesmo computador, use 127.0.0.1.\nEm outra máquina, use o IP exibido pelo servidor.", "small-muted"); dica.setWrapText(true);
         Label privacidade = label("Várias salas · Uma rede de conversas", "small-muted"); privacidade.setGraphic(Icones.criar(Feather.HASH, 14));
         formulario.getChildren().addAll(temas.seletor(false), passo, heading, explicacao, espaco(8), label("Seu apelido", "field-label"), nome, rede, erroLogin, conectar, dica, espaco(6), privacidade);
-        StackPane areaFormulario = new StackPane(formulario); areaFormulario.setPadding(new Insets(24)); HBox.setHgrow(areaFormulario, Priority.ALWAYS);
-        HBox raiz = new HBox(areaFormulario, apresentacao); raiz.getStyleClass().add("login-root"); trocar(raiz);
+        StackPane areaFormulario = new StackPane(formulario); areaFormulario.setMinWidth(0); areaFormulario.setMinHeight(Region.USE_PREF_SIZE); areaFormulario.setPadding(new Insets(24)); HBox.setHgrow(areaFormulario, Priority.ALWAYS);
+        HBox raiz = new HBox(areaFormulario, apresentacao); raiz.getStyleClass().add("login-root");
+        ViewportAdaptavel vista=new ViewportAdaptavel(raiz,280,Region.USE_PREF_SIZE);
+        Runnable adaptar=() -> {
+            boolean amplo=vista.getWidth()>=940 && vista.getHeight()>=760; apresentacao.setVisible(amplo); apresentacao.setManaged(amplo);
+            if(moldura!=null) moldura.painelDireito(amplo ? apresentacao.getWidth() : 0);
+            raiz.pseudoClassStateChanged(javafx.css.PseudoClass.getPseudoClass("compact"),vista.getWidth()<620);
+            areaFormulario.setPadding(new Insets(vista.getWidth()<620 ? 12 : 24));
+        };
+        vista.widthProperty().addListener((o,a,b)->adaptar.run()); vista.heightProperty().addListener((o,a,b)->adaptar.run()); apresentacao.widthProperty().addListener((o,a,b)->adaptar.run()); adaptar.run();
+        trocar(vista);
         if (janela.isShowing()) animacoes.aparecer(formulario, 0, 8, 45);
         Platform.runLater(nome::requestFocus);
     }
@@ -186,7 +196,7 @@ public final class ClienteChat extends Application {
         Button geral = botao(salaAtualNome, "channel", Feather.HASH); geral.setMaxWidth(Double.MAX_VALUE); geral.setOnAction(e -> { destino.setValue("Todos"); comando("/history 50"); });
         geral.setTooltip(new Tooltip("Mostrar as últimas mensagens da sala"));
         online = label("PARTICIPANTES", "sidebar-label"); participantes = new VBox(6);
-        ScrollPane lista = new ScrollPane(participantes); lista.getStyleClass().add("people-scroll"); lista.setFitToWidth(true); VBox.setVgrow(lista, Priority.ALWAYS);
+        ScrollPane lista = new ScrollPane(participantes); lista.getStyleClass().add("people-scroll"); lista.setFitToWidth(true); lista.setMinHeight(80); lista.setPrefHeight(160); VBox.setVgrow(lista, Priority.ALWAYS);
         Label voce = label(apelido + "  ·  você", "sidebar-name"); voce.setWrapText(true); voce.setGraphic(new EmojiAvatar(meuEmoji, 42));
         estadoConexao = label("Conectado\n" + endereco + "\nSala: " + salaAtualNome, "connection"); estadoConexao.setGraphic(Icones.criar(Feather.WIFI, 15)); estadoConexao.setWrapText(true);
         Button copiar = botao("Copiar endereço", "sidebar-button", Feather.COPY); copiar.setOnAction(e -> { ClipboardContent c = new ClipboardContent(); c.putString(endereco); Clipboard.getSystemClipboard().setContent(c); aviso.setText("Endereço copiado. Entre nesse servidor e escolha a sala " + salaAtualNome + "."); animacoes.aparecer(aviso, 0, 4, 0); });
@@ -194,49 +204,80 @@ public final class ClienteChat extends Application {
         lateral.getChildren().addAll(marca, temas.seletor(true), label("SALAS DO SERVIDOR", "sidebar-label"), escolherSala, geral, espaco(6), online, lista, voce, estadoConexao, copiar, sair);
         raiz.setRight(lateral);
 
-        VBox principal = new VBox();
+        VBox principal = new VBox(); principal.setMinSize(0,0);
         titulo = label("Sala " + salaAtualNome, "chat-title"); subtitulo = label("Um lugar para compartilhar ideias e se encontrar.", "muted");
         subtitulo.setWrapText(true);
-        VBox titulos = new VBox(5, titulo, subtitulo); HBox.setHgrow(titulos, Priority.ALWAYS);
+        VBox titulos = new VBox(5, titulo, subtitulo); titulos.setMinWidth(0); titulo.setMinWidth(0); titulo.setWrapText(true); HBox.setHgrow(titulos, Priority.ALWAYS);
         totalOnline = label("Conectado", "status-text"); pontoConexao = new Circle(4, Color.web("#397c54"));
         HBox status = new HBox(7, pontoConexao, totalOnline); status.setAlignment(Pos.CENTER); status.getStyleClass().add("status-pill");
         pulsoConexao = animacoes.pulsar(pontoConexao);
-        HBox header = new HBox(12, titulos, status); header.getStyleClass().add("chat-header"); header.setAlignment(Pos.CENTER_LEFT);
-        busca = new TextField(); busca.setPromptText("Buscar no histórico público…"); busca.setId("busca"); HBox.setHgrow(busca, Priority.ALWAYS);
-        Button pesquisar = botao("Buscar", "secondary", Feather.SEARCH); pesquisar.setOnAction(e -> buscar()); busca.setOnAction(e -> buscar());
+        Button abrirPainel=botao("Salas", "secondary", Feather.USERS); abrirPainel.setId("abrir-painel");
+        HBox header = new HBox(12, titulos, status, abrirPainel); header.getStyleClass().add("chat-header"); header.setAlignment(Pos.CENTER_LEFT);
+        busca = new TextField(); busca.setPromptText("Buscar no histórico público…"); busca.setId("busca"); busca.setMinWidth(0); HBox.setHgrow(busca, Priority.ALWAYS);
+        Button pesquisar = botao("Buscar", "secondary", Feather.SEARCH); pesquisar.setAccessibleText("Buscar no histórico"); pesquisar.setTooltip(new Tooltip("Buscar no histórico")); pesquisar.setOnAction(e -> buscar()); busca.setOnAction(e -> buscar());
         Button voltar = botao("Histórico", "secondary", Feather.CLOCK); voltar.setTooltip(new Tooltip("Mostrar as últimas mensagens da sala")); voltar.setOnAction(e -> { busca.clear(); comando("/history 50"); });
         Button ia = botao("IA", "secondary", Feather.ZAP); ia.setTooltip(new Tooltip("Perguntar à Conexo IA em privado ou na sala"));
+        voltar.setAccessibleText("Mostrar histórico"); ia.setAccessibleText("Perguntar à IA");
         ia.setOnAction(e -> abrirIA());
-        HBox ferramentas = new HBox(9, busca, pesquisar, voltar, ia); ferramentas.getStyleClass().add("toolbar");
+        HBox ferramentasLargas = new HBox(9, busca, pesquisar, voltar, ia); ferramentasLargas.setMinWidth(0);
+        FlowPane acoesBusca=new FlowPane(8,8); VBox ferramentas=new VBox(8,ferramentasLargas); ferramentas.getStyleClass().add("toolbar"); ferramentas.setMinWidth(0);
         mensagens = new VBox(14); mensagens.getStyleClass().add("messages");
         digitacoesRemotas = new VBox(10); digitacoesRemotas.setManaged(false); digitacoesRemotas.setVisible(false);
         previa = new BalaoRascunho();
         fluxoConversa = new VBox(14, mensagens, digitacoesRemotas, previa); fluxoConversa.getStyleClass().add("conversation-stream");
         rolagem = new ScrollPane(fluxoConversa); rolagem.setFitToWidth(true); rolagem.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER); rolagem.getStyleClass().add("message-scroll"); VBox.setVgrow(rolagem, Priority.ALWAYS);
         rolagem.setOnScroll(e -> { if (e.getDeltaY() > 0 && rolagemSuave != null) rolagemSuave.stop(); });
+        rolagem.setMinSize(0,0); fluxoConversa.setMinWidth(0);
         novasMensagens = botao("Novas mensagens", "new-messages", Feather.ARROW_DOWN); novasMensagens.setVisible(false); novasMensagens.setOnAction(e -> rolar());
-        StackPane conversa = new StackPane(rolagem, novasMensagens); VBox.setVgrow(conversa, Priority.ALWAYS);
+        StackPane conversa = new StackPane(rolagem, novasMensagens); conversa.setMinSize(0,0); VBox.setVgrow(conversa, Priority.ALWAYS);
         StackPane.setAlignment(novasMensagens, Pos.BOTTOM_RIGHT); StackPane.setMargin(novasMensagens, new Insets(0, 25, 18, 0));
         rolagem.vvalueProperty().addListener((obs, antes, depois) -> { if (depois.doubleValue() > .98) novasMensagens.setVisible(false); });
         aviso = label("Públicas ficam no histórico. Privadas duram apenas esta sessão.", "small-muted"); aviso.setWrapText(true);
         destino = new ComboBox<>(); destino.getItems().add("Todos"); destino.setValue("Todos"); destino.setPrefWidth(165); destino.setMinWidth(130); destino.setAccessibleText("Destinatário da mensagem");
-        texto = new TextField(); texto.setPromptText("Escreva uma mensagem…"); texto.setId("mensagem"); HBox.setHgrow(texto, Priority.ALWAYS); texto.setOnAction(e -> enviar());
+        texto = new TextField(); texto.setPromptText("Escreva uma mensagem…"); texto.setId("mensagem"); texto.setMinWidth(0); HBox.setHgrow(texto, Priority.ALWAYS); texto.setOnAction(e -> enviar());
+        texto.setTooltip(new Tooltip("Até 500 caracteres · Enter para enviar · /help para ver os comandos"));
         contador = label("0 / 500", "counter");
         enviarMensagem = botao("Enviar", "primary", Feather.SEND); enviarMensagem.setContentDisplay(ContentDisplay.RIGHT); enviarMensagem.setOnAction(e -> enviar()); enviarMensagem.setId("enviar"); enviarMensagem.setDisable(true);
+        enviarMensagem.setAccessibleText("Enviar mensagem");
         texto.textProperty().addListener((obs, antes, depois) -> {
             contador.setText(depois.length() + " / 500"); contador.getStyleClass().remove("over-limit");
             if (depois.length() > 500) contador.getStyleClass().add("over-limit");
             enviarMensagem.setDisable(depois.isBlank() || depois.length() > 500 || !conectado);
             atualizarRascunho(); sinalizarDigitacao();
         });
-        composicao = new HBox(10, destino, texto, enviarMensagem); composicao.setAlignment(Pos.CENTER_LEFT); composicao.getStyleClass().add("compose-box");
+        HBox linhaEnvio=new HBox(10,texto,enviarMensagem); linhaEnvio.setMinWidth(0); HBox.setHgrow(linhaEnvio,Priority.ALWAYS);
+        composicao = new HBox(10, destino, linhaEnvio); composicao.setMinWidth(0); composicao.setAlignment(Pos.CENTER_LEFT); composicao.getStyleClass().add("compose-box");
         destino.setOnAction(e -> { if (!atualizandoParticipantes) atualizarDestino(); });
         Label ajuda = label("Enter para enviar · / para ajuda", "small-muted"); Region respiro = new Region(); HBox.setHgrow(respiro, Priority.ALWAYS);
         Button ajudaComandos = botao("Comandos /", "command-help", Feather.COMMAND); ajudaComandos.setOnAction(e -> comando("/help"));
         HBox legenda = new HBox(10, ajuda, respiro, ajudaComandos, contador); legenda.setAlignment(Pos.CENTER_LEFT);
-        VBox rodape = new VBox(10, aviso, composicao, legenda); rodape.getStyleClass().add("composer");
+        VBox caixaEnvio=new VBox(8,composicao); caixaEnvio.setMinWidth(0);
+        VBox rodape = new VBox(10, aviso, caixaEnvio, legenda); rodape.setMinWidth(0); rodape.getStyleClass().add("composer");
         principal.getChildren().addAll(header, ferramentas, conversa, rodape); raiz.setCenter(principal);
-        trocar(raiz); janela.setTitle("Conexo · " + salaAtualNome + " · " + apelido + " · " + endereco); Platform.runLater(texto::requestFocus);
+        TelaChatAdaptavel adaptavel=new TelaChatAdaptavel(raiz,lateral,abrirPainel,largura -> { if(moldura!=null) moldura.painelDireito(largura); });
+        boolean[] estreito={false};
+        Runnable adaptarChat=() -> {
+            boolean menor=adaptavel.getWidth()<620;
+            if(menor!=estreito[0]) {
+                boolean escrevendo=texto.isFocused();
+                estreito[0]=menor;
+                // Desanexa antes de reorganizar: não recria campos, rascunhos ou a conexão.
+                ferramentasLargas.getChildren().clear(); acoesBusca.getChildren().clear(); ferramentas.getChildren().clear();
+                composicao.getChildren().clear(); caixaEnvio.getChildren().clear();
+                if(menor) { acoesBusca.getChildren().setAll(pesquisar,voltar,ia); ferramentas.getChildren().setAll(busca,acoesBusca); composicao.getChildren().setAll(linhaEnvio); caixaEnvio.getChildren().setAll(destino,composicao); destino.setMaxWidth(Double.MAX_VALUE); }
+                else { ferramentasLargas.getChildren().setAll(busca,pesquisar,voltar,ia); ferramentas.getChildren().setAll(ferramentasLargas); composicao.getChildren().setAll(destino,linhaEnvio); caixaEnvio.getChildren().setAll(composicao); destino.setMaxWidth(165); }
+                if(escrevendo) Platform.runLater(texto::requestFocus);
+            }
+            boolean detalhes=adaptavel.getWidth()>=680 && adaptavel.getHeight()>=560;
+            subtitulo.setVisible(detalhes); subtitulo.setManaged(detalhes); status.setVisible(detalhes); status.setManaged(detalhes);
+            boolean dicas=adaptavel.getHeight()>=500; aviso.setVisible(dicas); aviso.setManaged(dicas); ajuda.setVisible(!menor); ajuda.setManaged(!menor);
+            boolean legendaVisivel=adaptavel.getHeight()>=460; legenda.setVisible(legendaVisivel); legenda.setManaged(legendaVisivel);
+            abrirPainel.setText(adaptavel.getWidth()<420 ? "" : "Salas");
+            enviarMensagem.setText(adaptavel.getWidth()<420 ? "" : "Enviar");
+            pesquisar.setText(adaptavel.getWidth()<420 ? "" : "Buscar"); voltar.setText(adaptavel.getWidth()<420 ? "" : "Histórico"); ia.setText(adaptavel.getWidth()<420 ? "" : "IA");
+        };
+        adaptavel.widthProperty().addListener((o,a,b)->adaptarChat.run()); adaptavel.heightProperty().addListener((o,a,b)->adaptarChat.run());
+        trocar(new ViewportAdaptavel(adaptavel,300,400)); janela.setTitle("Conexo · " + salaAtualNome + " · " + apelido + " · " + endereco); Platform.runLater(texto::requestFocus);
     }
     private void receber(Evento evento) {
         switch (evento.tipo()) {

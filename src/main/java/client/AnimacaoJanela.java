@@ -22,7 +22,7 @@ final class AnimacaoJanela {
     void preparar(Stage janela, Node conteudo) {
         parar(); this.janela = janela; this.conteudo = conteudo; encerrando = false;
         // Executado antes de show(): não deixa um quadro opaco piscar na abertura.
-        janela.setOpacity(0); conteudo.setTranslateY(10);
+        janela.setOpacity(0); conteudo.setTranslateY(0);
     }
 
     void abrir() {
@@ -33,10 +33,8 @@ final class AnimacaoJanela {
                 stop(); primeiroQuadro = null;
                 if (encerrando) return;
                 transicao = new Timeline(
-                        new KeyFrame(Duration.ZERO, new KeyValue(janela.opacityProperty(), janela.getOpacity()),
-                                new KeyValue(conteudo.translateYProperty(), conteudo.getTranslateY())),
-                        new KeyFrame(Duration.millis(850), new KeyValue(janela.opacityProperty(), 1, ABRIR),
-                                new KeyValue(conteudo.translateYProperty(), 0, ABRIR)));
+                        new KeyFrame(Duration.ZERO, new KeyValue(janela.opacityProperty(), janela.getOpacity())),
+                        new KeyFrame(Duration.millis(850), new KeyValue(janela.opacityProperty(), 1, ABRIR)));
                 transicao.setOnFinished(e -> transicao = null); transicao.play();
             }
         };
@@ -50,10 +48,8 @@ final class AnimacaoJanela {
         if (janela == null) { concluido.run(); return; }
         // Parte dos valores atuais, inclusive se o usuário fechar durante a abertura.
         transicao = new Timeline(
-                new KeyFrame(Duration.ZERO, new KeyValue(janela.opacityProperty(), janela.getOpacity()),
-                        new KeyValue(conteudo.translateYProperty(), conteudo.getTranslateY())),
-                new KeyFrame(Duration.millis(300), new KeyValue(janela.opacityProperty(), 0, FECHAR),
-                        new KeyValue(conteudo.translateYProperty(), conteudo.getTranslateY() + 6, FECHAR)));
+                new KeyFrame(Duration.ZERO, new KeyValue(janela.opacityProperty(), janela.getOpacity())),
+                new KeyFrame(Duration.millis(300), new KeyValue(janela.opacityProperty(), 0, FECHAR)));
         transicao.setOnFinished(e -> { transicao = null; concluido.run(); }); transicao.play();
     }
 

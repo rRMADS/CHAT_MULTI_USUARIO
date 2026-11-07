@@ -34,7 +34,7 @@ final class Animacoes {
     void trocar(StackPane palco, Parent tela) {
         if (troca != null) troca.stop();
         palco.getChildren().setAll(tela);
-        troca = entrada(tela, 0, 6, 0);
+        troca = entrada(tela, 0, 0, 0);
         troca.play();
     }
 

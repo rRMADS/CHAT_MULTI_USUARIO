@@ -117,14 +117,14 @@
 .combo-box .list-cell { -fx-text-fill:-conexo-text; }
 .room-picker { -fx-background-color:-conexo-sidebar-alt; -fx-border-color:-conexo-border; -fx-border-radius: 10; -fx-padding: 8 3; }
 .room-picker > .list-cell { -fx-text-fill:-conexo-side-text; -fx-font-size: 14px; }
-.room-picker > .arrow-button > .arrow { -fx-background-color:-conexo-sidebar-alt; }
+.room-picker > .arrow-button > .arrow { -fx-background-color:-conexo-side-muted; }
 .room-picker .list-view .list-cell { -fx-text-fill:-conexo-text; }
 .combo-box-popup .list-view { -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 5; -fx-effect:dropshadow(gaussian, -conexo-shadow, 18, .08, 0, 5); }
 .combo-box-popup .list-cell { -fx-padding: 10 12; -fx-background-radius: 7; }
 .combo-box-popup .list-cell:filled:selected { -fx-background-color:-conexo-own; -fx-text-fill:-conexo-text; }
 .combo-box-popup .list-cell:filled:hover { -fx-background-color:-conexo-own; -fx-text-fill:-conexo-text; }
 .context-menu { -fx-background-radius: 12; -fx-padding: 5; }
-.tooltip { -fx-background-color:-conexo-sidebar; -fx-text-fill:-conexo-text; -fx-background-radius: 8; -fx-padding: 9 12; -fx-font-size: 12px; }
+.tooltip { -fx-background-color:-conexo-sidebar; -fx-text-fill:-conexo-side-text; -fx-background-radius: 8px; -fx-padding: 9 12; -fx-font-size: 12px; }
 .new-messages { -fx-background-color:-conexo-accent; -fx-text-fill:-conexo-button-text; -fx-background-radius: 24; -fx-font-size: 13px; -fx-padding: 11 16; -fx-effect:dropshadow(gaussian, -conexo-shadow, 16, .1, 0, 4); }
 .scroll-bar { -fx-background-color: transparent; -fx-pref-width: 8; }
 .scroll-bar .thumb { -fx-background-color:-conexo-border; -fx-background-radius: 6; }
@@ -156,3 +156,40 @@
 .sidebar { -fx-padding: 22 18 18 18; }
 .channel { -fx-padding: 10 13; }
 .room-picker { -fx-padding: 7 3; }
+
+/* A moldura pertence ao aplicativo: nenhuma margem branca acima ou abaixo. */
+.window-shell { -fx-padding: 0; -fx-background-color: -conexo-bg; -fx-background-radius: 0; -fx-border-width: 0; }
+.window-side { -fx-background-color: -conexo-sidebar; }
+.window-bar { -fx-padding: 0 0 0 14; }
+.window-title { -fx-font-size: 12px; -fx-text-fill: -conexo-muted; }
+.window-control { -fx-padding: 0; -fx-min-width: 38; -fx-pref-width: 38; -fx-max-width: 38; -fx-min-height: 36; -fx-pref-height: 36; -fx-background-color: transparent; -fx-background-radius: 0; -fx-border-width: 0; }
+.window-control .app-icon { -fx-icon-color: -conexo-muted; }
+.window-control:hover { -fx-background-color: -conexo-own; }
+.window-bar:side .window-control .app-icon { -fx-icon-color: -conexo-side-text; }
+.window-bar:side .window-control:hover { -fx-background-color: -conexo-sidebar-alt; }
+.window-bar .window-close:hover { -fx-background-color: #C93650; }
+.window-bar .window-close:hover .app-icon { -fx-icon-color: white; }
+.adaptive-viewport, .adaptive-viewport > .viewport { -fx-background-color: -conexo-bg; -fx-padding: 0; -fx-border-width: 0; }
+.sidebar-scroll, .sidebar-scroll > .viewport { -fx-background-color: -conexo-sidebar; -fx-padding: 0; -fx-border-width: 0; }
+.drawer-shade { -fx-background-color: #100B234D; }
+.theme-chooser { -fx-background-color: -conexo-inset; -fx-background-radius: 17; -fx-padding: 4; -fx-border-color: -conexo-border; -fx-border-radius: 17; }
+.theme-chooser-side { -fx-background-color: -conexo-sidebar-alt; -fx-border-color: transparent; }
+.theme-highlight { -fx-background-color: -conexo-surface; -fx-background-radius: 12; -fx-effect: dropshadow(gaussian, -conexo-shadow, 10, .08, 0, 2); }
+.theme-option { -fx-background-color: transparent; -fx-background-radius: 12; -fx-border-radius: 12; -fx-padding: 7 3; -fx-text-fill: -conexo-muted; -fx-font-size: 12px; -fx-font-weight: bold; -fx-graphic-text-gap: 4; -fx-cursor: hand; }
+.theme-option .app-icon { -fx-icon-color: -conexo-muted; }
+.theme-chooser-side .theme-option { -fx-text-fill: -conexo-side-muted; }
+.theme-chooser-side .theme-option .app-icon { -fx-icon-color: -conexo-side-muted; }
+.theme-option:selected, .theme-chooser-side .theme-option:selected { -fx-background-color: transparent; -fx-text-fill: -conexo-accent; }
+.theme-option:selected .app-icon, .theme-chooser-side .theme-option:selected .app-icon { -fx-icon-color: -conexo-accent; }
+.theme-option:focused { -fx-border-color: -conexo-accent; }
+.login-root:compact .login-form { -fx-padding: 18; -fx-background-radius: 19; }
+.login-root:compact .login-title { -fx-font-size: 27px; }
+.chat-shell:compact .chat-header { -fx-padding: 12; }
+.chat-shell:compact .chat-title { -fx-font-size: 23px; }
+.chat-shell:compact .toolbar { -fx-padding: 8 12; }
+.chat-shell:compact .conversation-stream { -fx-padding: 12; }
+.chat-shell:compact .composer { -fx-padding: 0 12 12 12; }
+.chat-shell:compact .bubble, .chat-shell:compact .bubble-own { -fx-padding: 12 14; }
+.chat-shell:compact .toolbar .button, .chat-shell:compact #abrir-painel { -fx-padding: 8 12; }
+.chat-shell:compact .toolbar .text-field { -fx-padding: 8 12; }
+.chat-shell:compact .composer .combo-box { -fx-padding: 2; }

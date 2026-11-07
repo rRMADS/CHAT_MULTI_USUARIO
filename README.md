@@ -17,7 +17,7 @@ As instruções abaixo explicam como executar no Windows, conectar participantes
 3. Escolha apelidos diferentes e, no popup de identificação, selecione um emoji obrigatório para entrar. Use IP `127.0.0.1` e porta `5050` no mesmo computador.
 4. Em outro computador da mesma rede, use o endereço IPv4 mostrado pelo servidor e a mesma porta.
 5. Envie uma mensagem. Todos os participantes da mesma sala recebem a mensagem.
-6. Na lateral do cliente, use **Salas do servidor** para ir a Geral, Estudos, Projetos, Café ou Livre, sem sair do programa.
+6. Na lateral do cliente (ou pelo botão **Salas** em janelas menores), use **Salas do servidor** para ir a Geral, Estudos, Projetos, Café ou Livre, sem sair do programa.
 
 A primeira preparação baixa as bibliotecas e exige internet. Depois disso, os lançadores usam os arquivos já compilados, recompilando quando as fontes mudam. Não abra vários lançadores durante o primeiro download. O projeto foi testado em Windows com JDK 26.0.2.1 e compilado para Java 17. Cada computador precisa ter o projeto extraído e um JDK; ainda não há instalador independente com Java embutido.
 
@@ -71,11 +71,13 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Tipografia equilibrada: mensagens em 16 px, campos em 15 px, participantes em 14 px e informações auxiliares de 12 a 13 px, com contraste reforçado.
 - Validação de mensagens, limite de 500 caracteres e contador.
 - Animações sempre ativas: transições curtas sem sobrepor telas, entrada discreta das mensagens, resposta ao pressionar botões, ilustração flutuante e pontos de digitação em ondas.
-- Abertura e fechamento suaves da janela inteira, incluindo a moldura, com leve deslocamento do conteúdo e sem redimensionar a janela. Fechar durante a abertura continua a partir do ponto atual, sem piscar.
+- Abertura e fechamento suaves da janela inteira, incluindo a moldura, sem deslocar as bordas do conteúdo ou redimensionar a janela durante a animação. Fechar durante a abertura continua a partir do ponto atual, sem piscar.
 - Ícones vetoriais em botões, mensagens privadas, menus e avisos; paleta Violeta suave e temas Roxo (padrão), Claro e Escuro em campos, seletores e popups.
 - Movimento do ícone ao enviar e indicação de mensagem pública salva no servidor após a confirmação do histórico. Essa indicação não confirma leitura.
 - Emojis 3D com brilho nas mensagens e na lista de participantes, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens. O emoji é preservado no histórico público.
-- Tema escolhido na entrada ou na lateral do chat, aplicado sem desconectar e lembrado neste computador em `cliente.properties`.
+- Escolha de tema com três botões visuais (estrela, sol e lua), destaque deslizante e reação dos ícones ao passar o mouse. Aplicada sem desconectar e lembrada neste computador em `cliente.properties`.
+- Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
+- Janela sem o limite mínimo anterior de 1040 × 760. Em tamanhos menores, os campos se reorganizam e o painel lateral abre pelo botão Salas; clique fora ou pressione Esc para fechá-lo. Em dimensões muito pequenas, a rolagem mantém os controles acessíveis.
 - Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
