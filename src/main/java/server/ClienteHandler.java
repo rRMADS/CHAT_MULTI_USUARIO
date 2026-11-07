@@ -31,9 +31,9 @@ public final class ClienteHandler implements Runnable, ConexaoCliente {
             // O socket é o dono dos streams e será fechado no finally, depois de enviar eventuais erros.
             var leitor = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             socket.setSoTimeout(10_000);
-            String nome = lerLinhaLimitada(leitor, 30);
-            if (nome == null) return;
-            usuario = new Usuario(nome); salas.conectar(this);
+            String apresentacao = lerLinhaLimitada(leitor, 256);
+            if (apresentacao == null) return;
+            usuario = Protocolo.identificar(apresentacao); salas.conectar(this);
             socket.setSoTimeout(90_000);
             long ultimaDigitacao = 0;
             while (ativo) {

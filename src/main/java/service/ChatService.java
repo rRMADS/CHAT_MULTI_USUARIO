@@ -20,6 +20,7 @@ public final class ChatService {
     private final Clock clock;
     private final int tamanhoHistorico;
     private final Sala sala;
+    private long versaoHistorico;
     private final Map<ConexaoCliente, Instant> confirmacoesLimpeza = new IdentityHashMap<>();
     public ChatService(MensagemRepository repository, ClientRegistry registry, Clock clock, int tamanhoHistorico) {
         this(repository, registry, clock, tamanhoHistorico, Sala.GERAL);
@@ -33,7 +34,7 @@ public final class ChatService {
         var ultimas = repository.buscarUltimas(tamanhoHistorico);
         registry.adicionar(cliente);
         try {
-            cliente.enviar(Evento.de(BEM_VINDO, cliente.getUsuario().nome(), sala.id(), sala.nome()));
+            cliente.enviar(Evento.de(BEM_VINDO, cliente.getUsuario().nome(), sala.id(), sala.nome(),cliente.getUsuario().emoji().id()));
             historico(cliente, ultimas, "Últimas mensagens");
             broadcast(Evento.de(SISTEMA, cliente.getUsuario().nome() + " entrou no chat."));
             publicarUsuarios();
@@ -57,7 +58,7 @@ public final class ChatService {
         if (usuario.equals(origem.getUsuario())) throw new IllegalArgumentException("Escolha outra pessoa para enviar uma mensagem privada.");
         ConexaoCliente destino = registry.buscarPorUsuario(usuario).orElseThrow(() -> new IllegalArgumentException("Esta pessoa está offline."));
         Mensagem m = new Mensagem(null, origem.getUsuario(), texto, LocalDateTime.now(clock));
-        Evento evento = Evento.de(PRIVADA, origem.getUsuario().nome(), destino.getUsuario().nome(), m.conteudo(), m.horario().toString());
+        Evento evento = Evento.de(PRIVADA, origem.getUsuario().nome(), destino.getUsuario().nome(), m.conteudo(), m.horario().toString(),origem.getUsuario().emoji().id());
         try { destino.enviar(evento); } catch (RuntimeException e) {
             desconectar(destino); destino.fechar(); throw new IllegalArgumentException("A pessoa se desconectou. Mensagem privada não enviada.");
         }
@@ -90,6 +91,7 @@ public final class ChatService {
         if (prazo == null || !clock.instant().isBefore(prazo))
             throw new IllegalArgumentException("Confirmação ausente ou expirada. Use /limpar nesta sala antes de enviar /limpar confirmar.");
         int removidas = repository.limpar();
+        versaoHistorico++;
         confirmacoesLimpeza.clear();
         // A exclusão e o evento ficam no mesmo lock dos envios: nenhum sucesso antes do commit.
         broadcast(Evento.de(HISTORICO_LIMPO, sala.id(), sala.nome(), cliente.getUsuario().nome(), Integer.toString(removidas)));
@@ -99,8 +101,23 @@ public final class ChatService {
         mensagens.forEach(m -> cliente.enviar(eventoMensagem(m)));
         cliente.enviar(Evento.de(HISTORICO_FIM, Integer.toString(mensagens.size())));
     }
+    public synchronized long versaoHistorico() { return versaoHistorico; }
+    public synchronized void publicarRespostaIA(String resposta, long versao) {
+        if(versaoHistorico!=versao) throw new IllegalArgumentException("A sala teve o histórico limpo durante a consulta. A resposta da IA foi cancelada.");
+        String restante="Resposta gerada por IA: "+resposta.replaceAll("\\p{Cntrl}"," ");
+        while(!restante.isBlank()) {
+            int fim=Math.min(500,restante.length());
+            if(fim<restante.length() && Character.isHighSurrogate(restante.charAt(fim-1))) fim--;
+            if(fim<restante.length()) { int quebra=restante.lastIndexOf(' ',fim); if(quebra>300) fim=quebra; }
+            Mensagem salva=repository.salvar(new Mensagem(null,new Usuario("Conexo IA","robot"),restante.substring(0,fim),LocalDateTime.now(clock)));
+            broadcast(eventoMensagem(salva)); restante=restante.substring(fim).stripLeading();
+        }
+    }
     public synchronized void publicarUsuarios() {
         broadcast(new Evento(USUARIOS, usuariosOnline()));
+        List<String> perfis = new ArrayList<>();
+        for(var c:registry.snapshot()) { perfis.add(c.getUsuario().nome()); perfis.add(c.getUsuario().emoji().id()); }
+        broadcast(new Evento(PERFIS,perfis));
     }
     public List<String> usuariosOnline() { return registry.snapshot().stream().map(c -> c.getUsuario().nome()).sorted(String.CASE_INSENSITIVE_ORDER).toList(); }
     public int quantidadeUsuarios() { return registry.quantidade(); }
@@ -117,7 +134,7 @@ public final class ChatService {
         if (houveFalha) publicarUsuarios();
     }
     private Evento eventoMensagem(Mensagem m) {
-        return Evento.de(MENSAGEM, m.id().toString(), m.remetente().nome(), m.conteudo(), m.horario().toString());
+        return Evento.de(MENSAGEM, m.id().toString(), m.remetente().nome(), m.conteudo(), m.horario().toString(),m.remetente().emoji().id());
     }
     private void exigirConectado(ConexaoCliente c) {
         if (!registry.snapshot().contains(c)) throw new IllegalArgumentException("Conecte-se novamente para enviar mensagens.");

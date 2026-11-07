@@ -42,6 +42,7 @@ class JdbcMensagemRepositoryIntegrationTest {
         }
         var geral = new JdbcMensagemRepository(factory); geral.inicializar(); geral.inicializar();
         assertEquals("Mensagem antiga", geral.buscarUltimas(10).get(0).conteudo());
+        assertEquals(EmojiIdentificacao.SMILE,geral.buscarUltimas(10).get(0).remetente().emoji());
         var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos")); assertTrue(estudos.buscarUltimas(10).isEmpty());
     }
     @Test void limpezaPersisteNoArquivoRespeitaSalaENaoReutilizaIds() {
@@ -54,5 +55,10 @@ class JdbcMensagemRepositoryIntegrationTest {
         assertTrue(criar(url).buscarUltimas(50).isEmpty());
         assertEquals("Texto dos Estudos", estudos.buscarUltimas(50).get(0).conteudo());
         assertTrue(geral.salvar(mensagem("Nova mensagem")).id() > antiga.id());
+    }
+    @Test void emojiEscolhidoSobreviveAReaberturaDoBanco() {
+        String url="jdbc:h2:"+pasta.resolve("emoji").toAbsolutePath();
+        criar(url).salvar(new Mensagem(null,new Usuario("Ana Silva","unicorn"),"Olá",LocalDateTime.now()));
+        assertEquals(EmojiIdentificacao.UNICORN,criar(url).buscarUltimas(1).get(0).remetente().emoji());
     }
 }

@@ -21,7 +21,7 @@ final class BalaoDigitacao extends HBox {
         Label estado = new Label("está digitando"); estado.getStyleClass().add("typing-state");
         HBox indicador = new HBox(6); indicador.setAlignment(Pos.CENTER_LEFT); indicador.setMinHeight(20);
         for (int i = 0; i < 3; i++) {
-            Circle ponto = new Circle(3.5, Color.web("#598568")); indicador.getChildren().add(ponto);
+            Circle ponto = new Circle(3.5); ponto.getStyleClass().add("typing-dot"); indicador.getChildren().add(ponto);
             Timeline onda = new Timeline(
                     new KeyFrame(Duration.ZERO, new KeyValue(ponto.translateYProperty(), 0), new KeyValue(ponto.opacityProperty(), .45)),
                     new KeyFrame(Duration.millis(220), new KeyValue(ponto.translateYProperty(), -4, Animacoes.SUAVE), new KeyValue(ponto.opacityProperty(), 1)),

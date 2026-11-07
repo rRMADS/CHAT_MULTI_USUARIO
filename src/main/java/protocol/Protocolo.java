@@ -14,4 +14,16 @@ public final class Protocolo {
         return new Evento(Evento.Tipo.valueOf(partes[0]), Arrays.stream(partes).skip(1)
                 .map(c -> new String(Base64.getDecoder().decode(c), StandardCharsets.UTF_8)).toList());
     }
+    public static String apresentar(model.Usuario usuario) {
+        return codificar(Evento.de(Evento.Tipo.APRESENTACAO, usuario.nome(), usuario.emoji().id()));
+    }
+    public static model.Usuario identificar(String linha) {
+        try {
+            Evento e = decodificar(linha);
+            if(e.tipo()!=Evento.Tipo.APRESENTACAO || e.campos().size()!=2) throw new IllegalArgumentException();
+            return new model.Usuario(e.campo(0),e.campo(1));
+        } catch(RuntimeException e) {
+            throw new IllegalArgumentException("Entre pelo cliente atualizado e escolha apelido e emoji de identificação.");
+        }
+    }
 }

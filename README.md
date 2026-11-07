@@ -14,7 +14,7 @@ As instruções abaixo explicam como executar no Windows, conectar participantes
 
 1. Abra `Servidor.cmd` no computador que vai hospedar a conversa. Mantenha essa janela aberta.
 2. Abra `Cliente.cmd` para cada participante. Para testar no mesmo computador, abra o cliente três vezes.
-3. Escolha apelidos diferentes. Use IP `127.0.0.1` e porta `5050` no mesmo computador.
+3. Escolha apelidos diferentes e, no popup de identificação, selecione um emoji obrigatório para entrar. Use IP `127.0.0.1` e porta `5050` no mesmo computador.
 4. Em outro computador da mesma rede, use o endereço IPv4 mostrado pelo servidor e a mesma porta.
 5. Envie uma mensagem. Todos os participantes da mesma sala recebem a mensagem.
 6. Na lateral do cliente, use **Salas do servidor** para ir a Geral, Estudos, Projetos, Café ou Livre, sem sair do programa.
@@ -62,7 +62,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Histórico público salvo em `data/chat.mv.db`, recuperado ao conectar novamente.
 - Interface em português, bolhas de mensagem, horário, lista de participantes e avisos de entrada e saída.
 - Painel lateral à direita desde a tela inicial; no chat, reúne salas, participantes e controles da conexão.
-- Entrada por IP/host e porta; recusa de apelidos duplicados.
+- Entrada por IP/host e porta; popup com apelido e emoji 3D obrigatório, prévia com brilho e recusa de apelidos duplicados. O apelido Conexo IA é reservado ao assistente.
 - Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
 - Busca no histórico público e recuperação das últimas mensagens.
@@ -72,14 +72,24 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Validação de mensagens, limite de 500 caracteres e contador.
 - Animações sempre ativas: transições curtas sem sobrepor telas, entrada discreta das mensagens, resposta ao pressionar botões, ilustração flutuante e pontos de digitação em ondas.
 - Abertura e fechamento suaves da janela inteira, incluindo a moldura, com leve deslocamento do conteúdo e sem redimensionar a janela. Fechar durante a abertura continua a partir do ponto atual, sem piscar.
-- Ícones vetoriais em botões, mensagens privadas, menus e avisos; tema verde consistente em seletores, dicas e campos.
+- Ícones vetoriais em botões, mensagens privadas, menus e avisos; paleta Violeta suave e temas Roxo (padrão), Claro e Escuro em campos, seletores e popups.
 - Movimento do ícone ao enviar e indicação de mensagem pública salva no servidor após a confirmação do histórico. Essa indicação não confirma leitura.
-- Avatares com iniciais, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens.
+- Emojis 3D com brilho nas mensagens e na lista de participantes, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens. O emoji é preservado no histórico público.
+- Tema escolhido na entrada ou na lateral do chat, aplicado sem desconectar e lembrado neste computador em `cliente.properties`.
+- Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
 - Filas limitadas por cliente para que um destinatário lento não bloqueie o broadcast.
 
 Privadas não ficam no banco e desaparecem ao sair, trocar de sala ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre na respectiva sala deste servidor. As salas são públicas e não têm senha.
+
+## Conexo IA
+
+O botão **IA**, ao lado de Histórico, abre o assistente com as opções **Privado · só você** e **Na sala**. No modo sala, pergunta e resposta são públicas e salvas; no privado, são enviadas somente ao solicitante e não ficam no banco do chat. Nenhum modo encaminha automaticamente o histórico da conversa ao provedor.
+
+A integração usa Groq e vem desativada. O servidor precisa de internet e da variável `GROQ_API_KEY`; participantes não precisam de chave. Sem chave, o chat continua funcionando e o assistente informa que ainda não foi ativado. Siga o [guia de ativação da IA](docs/IA.md), que também explica os limites, o modelo e como testar. Não coloque a chave nos fontes, no chat ou no GitHub.
+
+Atualize e reinicie **servidor e clientes juntos**: o novo protocolo exige a identificação com emoji. Mensagens antigas permanecem no banco e recebem o emoji de sorriso na migração automática.
 
 ## Comandos
 
@@ -98,6 +108,8 @@ Digite o comando no campo de mensagens e pressione **Enter** ou clique em **Envi
 | `/limpar cancelar` | Cancela seu pedido de limpeza |
 | `/msg Ana Olá` | Envia uma mensagem privada para Ana |
 | `/msg "Ana Silva" Olá` | Envia uma mensagem privada para um apelido com espaços |
+| `/ia privado sua pergunta` | Recebe uma resposta da IA somente para você, se ativada no servidor |
+| `/ia sala sua pergunta` | Publica a pergunta e a resposta da IA na sala atual, se ativada |
 | `/quit` ou `/sair` | Encerra a conexão |
 
 Os comandos aceitam maiúsculas e espaços adicionais. Para a sala Café, funcionam `/join cafe` e `/join Café`. Para um nome com espaços, use, por exemplo, `/join "Sala da Turma"`. Se duas salas tiverem o mesmo nome, informe o identificador mostrado por `/salas`. Uma troca para a sala em que você já está também recebe confirmação.
@@ -145,7 +157,7 @@ Pontos de entrada: `server.Servidor` e `client.Launcher`. Pelo terminal, use `mv
 
 | Biblioteca | Versão | Aplicação no Conexo |
 | --- | --- | --- |
-| [AtlantaFX](https://github.com/mkpaz/atlantafx) | 2.0.1 | Tema Primer Light, com a paleta verde personalizada |
+| [AtlantaFX](https://github.com/mkpaz/atlantafx) | 2.0.1 | Primer Light e Primer Dark, com os temas Roxo, Claro e Escuro do Conexo |
 | [Ikonli](https://github.com/kordamp/ikonli) + Feather | 12.4.0 | Ícones vetoriais nos controles e nas mensagens |
 | [AnimateFX](https://github.com/Typhon0/AnimateFX) | 1.3.0 | Fade de componentes e entrada de telas |
 

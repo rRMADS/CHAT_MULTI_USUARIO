@@ -3,8 +3,10 @@ CREATE TABLE IF NOT EXISTS mensagem (
     remetente VARCHAR(30) NOT NULL,
     conteudo VARCHAR(500) NOT NULL,
     horario TIMESTAMP NOT NULL,
-    sala VARCHAR(30) DEFAULT 'geral' NOT NULL
+    sala VARCHAR(30) DEFAULT 'geral' NOT NULL,
+    emoji VARCHAR(32) DEFAULT 'smile' NOT NULL
 );
 ALTER TABLE mensagem ADD COLUMN IF NOT EXISTS sala VARCHAR(30) DEFAULT 'geral' NOT NULL;
+ALTER TABLE mensagem ADD COLUMN IF NOT EXISTS emoji VARCHAR(32) DEFAULT 'smile' NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_mensagem_horario ON mensagem(horario);
 CREATE INDEX IF NOT EXISTS idx_mensagem_sala_id ON mensagem(sala, id);

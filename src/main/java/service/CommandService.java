@@ -48,6 +48,8 @@ public final class CommandService {
                 + "/limpar — solicita a limpeza permanente do histórico público desta sala\n"
                 + "/limpar confirmar — confirma em até 30 segundos; /limpar cancelar — cancela\n"
                 + "/msg \"Ana Silva\" Olá — envia uma mensagem privada\n"
+                + "/ia privado pergunta — pergunta à IA com resposta só para você\n"
+                + "/ia sala pergunta — publica pergunta e resposta da IA nesta sala\n"
                 + "/quit ou /sair — sai do chat";
     }
     private void enviarPrivada(ConexaoCliente cliente, String argumentos) {

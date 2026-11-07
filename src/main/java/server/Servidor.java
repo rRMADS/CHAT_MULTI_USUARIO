@@ -50,6 +50,7 @@ public final class Servidor implements AutoCloseable {
     }
     @Override public void close() {
         ativo = false;
+        salas.close();
         try { escuta.close(); } catch (IOException e) { System.err.println(e.getMessage()); }
         for (var socket : sockets) try { socket.close(); } catch (IOException e) { System.err.println(e.getMessage()); }
     }
@@ -62,7 +63,9 @@ public final class Servidor implements AutoCloseable {
             conversas.put(sala, new ChatService(new JdbcMensagemRepository(factory, sala), new ClientRegistry(),
                     Clock.systemDefaultZone(), config.historico(), sala));
         }
-        var servidor = new Servidor(config.bind(), config.porta(), config.maxClientes(), new SalaService(conversas));
+        var configIA=ia.ConfigIA.carregar(Path.of("chat.properties"),System.getenv());
+        var servidor = new Servidor(config.bind(), config.porta(), config.maxClientes(), new SalaService(conversas,configIA.criar()));
+        System.out.println(configIA.disponivel() ? "Conexo IA: Groq ativada (perguntas privadas ou na sala)." : "Conexo IA: desativada. O chat funciona normalmente. Consulte docs/IA.md para ativar.");
         Runtime.getRuntime().addShutdownHook(new Thread(servidor::close));
         servidor.iniciar();
         System.out.println("CONEXO | Servidor ativo na porta " + servidor.porta());

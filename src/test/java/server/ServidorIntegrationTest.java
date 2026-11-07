@@ -42,13 +42,24 @@ class ServidorIntegrationTest {
     }
     @Test void apelidoDuplicadoERecusadoSemAfetarClienteOriginal() throws Exception {
         try (var servidor = servidor(); var ana = new Cliente(servidor, "Ana"); var duplicado = new Socket("127.0.0.1", servidor.porta())) {
-            duplicado.setSoTimeout(5000); var w = new PrintWriter(new OutputStreamWriter(duplicado.getOutputStream(), StandardCharsets.UTF_8), true); w.println("ana");
+            duplicado.setSoTimeout(5000); var w = new PrintWriter(new OutputStreamWriter(duplicado.getOutputStream(), StandardCharsets.UTF_8), true); w.println(Protocolo.apresentar(new model.Usuario("ana")));
             var reader = new BufferedReader(new InputStreamReader(duplicado.getInputStream(), StandardCharsets.UTF_8));
             assertEquals(ERRO, Protocolo.decodificar(reader.readLine()).tipo());
             ana.enviar("Ainda aqui"); assertEquals("Ainda aqui", ana.ate(MENSAGEM).campo(2));
         }
     }
     @Test void leituraLimitadaRecusaLinhaGigante() { assertThrows(IOException.class, () -> ClienteHandler.lerLinhaLimitada(new StringReader("x".repeat(2050)), 2048)); }
+    @Test void conexaoRealRecusaEntradaSemEmoji() throws Exception {
+        try(var servidor=servidor()) {
+            for(String linha:List.of("Ana",Protocolo.codificar(Evento.de(APRESENTACAO,"Ana","")),Protocolo.codificar(Evento.de(APRESENTACAO,"Ana","desconhecido")))) {
+                try(var socket=new Socket("127.0.0.1",servidor.porta())) {
+                    socket.setSoTimeout(3000); var w=new PrintWriter(new OutputStreamWriter(socket.getOutputStream(),StandardCharsets.UTF_8),true); w.println(linha);
+                    var r=new BufferedReader(new InputStreamReader(socket.getInputStream(),StandardCharsets.UTF_8));
+                    assertEquals(ERRO,Protocolo.decodificar(r.readLine()).tipo()); assertNull(r.readLine());
+                }
+            }
+        }
+    }
     @Test void nomesComEspacosFuncionamNoHandshakeBroadcastPrivadaEHistorico() throws Exception {
         try (var servidor = servidor(); var joao = new Cliente(servidor, "João Silva");
              var maria = new Cliente(servidor, "Maria Souza"); var parcial = new Cliente(servidor, "Maria")) {
@@ -155,7 +166,7 @@ class ServidorIntegrationTest {
         Cliente(Servidor s, String nome) throws IOException {
             socket = new Socket("127.0.0.1", s.porta()); socket.setSoTimeout(8000);
             writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)); writer.println(nome);
+            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)); writer.println(Protocolo.apresentar(new model.Usuario(nome)));
             assertEquals(BEM_VINDO, ler().tipo());
             Evento e; do { e = ler(); if (e.tipo() == MENSAGEM) historico.add(e); } while (e.tipo() != HISTORICO_FIM);
         }

@@ -9,7 +9,8 @@ public final class FakeConexao implements ConexaoCliente {
     public final List<Evento> recebidos = new CopyOnWriteArrayList<>();
     public boolean falhar;
     public boolean fechada;
-    public FakeConexao(String nome) { usuario = new Usuario(nome); }
+    public FakeConexao(String nome) { this(nome,"smile"); }
+    public FakeConexao(String nome,String emoji) { usuario = new Usuario(nome,emoji); }
     @Override public Usuario getUsuario() { return usuario; }
     @Override public void enviar(Evento e) { if (falhar) throw new IllegalStateException("Simulando conexão lenta"); recebidos.add(e); }
     @Override public void fechar() { fechada = true; }

@@ -9,6 +9,7 @@ tmp/
 .project
 .settings/
 chat.properties
+cliente.properties
 *.log
 entrega/
 *.mv.db

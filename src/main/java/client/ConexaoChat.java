@@ -19,14 +19,14 @@ public final class ConexaoChat implements AutoCloseable {
     });
     private volatile Socket socket;
     public ConexaoChat(Consumer<Evento> receber, Consumer<String> encerrar) { this.receber = receber; this.encerrar = encerrar; }
-    public void conectar(String host, int porta, String nome) {
+    public void conectar(String host, int porta, model.Usuario usuario) {
         Thread rede = new Thread(() -> {
             try {
                 socket = new Socket();
                 if (fechada.get()) { socket.close(); return; }
                 socket.connect(new InetSocketAddress(host, porta), 5000); socket.setTcpNoDelay(true); socket.setSoTimeout(90_000);
                 var writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8));
-                writer.write(nome); writer.newLine(); writer.flush();
+                writer.write(Protocolo.apresentar(usuario)); writer.newLine(); writer.flush();
                 Thread envio = new Thread(() -> escrever(writer), "cliente-envio"); envio.setDaemon(true); envio.start();
                 heartbeat.scheduleAtFixedRate(() -> enviar("/ping"), 25, 25, TimeUnit.SECONDS);
                 try (var reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8))) {
