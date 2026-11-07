@@ -77,9 +77,9 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Emojis 3D com brilho nas mensagens e na lista de participantes, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens. O emoji é preservado no histórico público.
 - Escolha de tema com três botões visuais (estrela, sol e lua), destaque deslizante e reação dos ícones ao passar o mouse. Aplicada sem desconectar e lembrada neste computador em `cliente.properties`.
 - Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
-- Deslize de 500 ms ao maximizar e restaurar a janela, mantendo o tamanho e a posição anteriores. Minimizar usa um movimento para baixo com fade de 240 ms; o retorno da barra de tarefas desliza por 300 ms. Cliques rápidos podem inverter a transição sem reiniciar de outra posição.
+- Maximizar, restaurar e minimizar usam o comportamento nativo do Windows. Um acabamento discreto no conteúdo é aplicado após o layout estabilizar, sem mover a janela por animação, esticar letras ou deixar transparência residual.
 - Janela sem o limite mínimo anterior de 1040 × 760. Em tamanhos menores, os campos se reorganizam e o painel lateral abre pelo botão Salas; clique fora ou pressione Esc para fechá-lo. Em dimensões muito pequenas, a rolagem mantém os controles acessíveis.
-- Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor.
+- Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor. Configure a chave uma vez por **ConfigurarIA.cmd** para que seja lembrada ao abrir **Servidor.cmd** pelo Explorador.
 - Respostas da IA em um único cartão, com parágrafos, títulos, negrito, listas, tabelas e código formatados; botão para copiar a resposta completa. O formato também é preservado no histórico público.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
@@ -91,7 +91,7 @@ Privadas não ficam no banco e desaparecem ao sair, trocar de sala ou recarregar
 
 O botão **IA**, ao lado de Histórico, abre o assistente com as opções **Privado · só você** e **Na sala**. No modo sala, pergunta e resposta são públicas e salvas; no privado, são enviadas somente ao solicitante e não ficam no banco do chat. Nenhum modo encaminha automaticamente o histórico da conversa ao provedor.
 
-A integração usa Groq e vem desativada. O servidor precisa de internet e da variável `GROQ_API_KEY`; participantes não precisam de chave. Sem chave, o chat continua funcionando e o assistente informa que ainda não foi ativado. Siga o [guia de ativação da IA](docs/IA.md), que também explica os limites, o modelo e como testar. Não coloque a chave nos fontes, no chat ou no GitHub.
+A integração usa Groq e vem desativada. Abra **ConfigurarIA.cmd** uma vez no computador servidor, cole sua chave na solicitação oculta e aguarde a conclusão. Depois abra **Servidor.cmd** normalmente pelo Explorador; a chave será carregada automaticamente nas próximas execuções. O servidor precisa de internet; participantes não precisam de chave. Sem chave, o chat continua funcionando e o assistente informa que ainda não foi ativado. Siga o [guia de ativação da IA](docs/IA.md), que também explica os limites, o modelo e como testar. Não coloque a chave nos fontes, no chat ou no GitHub.
 
 Atualize e reinicie **servidor e clientes juntos**: o novo protocolo exige a identificação com emoji. Mensagens antigas permanecem no banco e recebem o emoji de sorriso na migração automática.
 
@@ -175,7 +175,7 @@ Para ver a atualização, feche os clientes antigos e abra `Cliente.cmd` novamen
 
 O repositório contém fontes (`src/`), testes, recursos gráficos, script SQL, documentação, lançadores, `pom.xml` e Maven Wrapper (`mvnw`, `mvnw.cmd`, `.mvn/`). Os arquivos `.gitignore` e `.gitattributes` mantêm os arquivos gerados fora da publicação e padronizam os fins de linha.
 
-Não envie `target/`, `.m2/`, `data/`, `tmp/`, `entrega/`, configurações pessoais da IDE ou `chat.properties` local. Essas pastas e arquivos são criados ao compilar/executar. As bibliotecas são baixadas automaticamente; não precisam acompanhar o código.
+Não envie `target/`, `.m2/`, `data/`, `tmp/`, `entrega/`, `.local/`, arquivos `*.dpapi`, configurações pessoais da IDE ou `chat.properties` local. Essas pastas e arquivos são criados ao compilar/executar ou configurar a chave. As bibliotecas são baixadas automaticamente; não precisam acompanhar o código.
 
 Os scripts do Maven Wrapper são do projeto Apache Maven Wrapper e têm licença Apache 2.0, incluída em `.mvn/wrapper/LICENSE.txt`.
 

@@ -53,6 +53,13 @@ try {
     if ($Modo -eq 'Preparar') { Write-Host 'Projeto pronto para executar.' -ForegroundColor Green; exit 0 }
     $taskClasspath = (Join-Path $taskRoot 'target\classes') + ';' + (Join-Path $taskRoot 'target\dependency\*')
     if ($Modo -eq 'Servidor') {
+        . (Join-Path $PSScriptRoot 'ChaveIA.ps1')
+        try {
+            $taskIAComChave = Import-ConexoChaveIA -PastaProjeto $taskRoot
+            if (!$taskIAComChave) { Write-Host 'Para lembrar a chave da IA neste computador, abra ConfigurarIA.cmd uma vez.' -ForegroundColor Yellow }
+        } catch {
+            Write-Host 'A chave salva nao pode ser lida nesta conta do Windows. Abra ConfigurarIA.cmd para configura-la novamente.' -ForegroundColor Yellow
+        }
         Write-Host 'Iniciando servidor. Mantenha esta janela aberta durante a conversa.' -ForegroundColor Green
         & $taskJava -cp $taskClasspath server.Servidor
     } else {

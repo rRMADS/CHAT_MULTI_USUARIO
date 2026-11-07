@@ -27,7 +27,7 @@ final class MolduraJanela extends StackPane {
     }
     MolduraJanela(Stage janela,StackPane conteudo,Runnable fechar,Runnable antesDeMinimizar) {
         this.janela=janela; janela.initStyle(StageStyle.UNDECORATED); janela.setMinWidth(0); janela.setMinHeight(0);
-        deslize=new DeslizeJanela(janela,antesDeMinimizar);
+        deslize=new DeslizeJanela(janela,conteudo,antesDeMinimizar);
         getStyleClass().add("window-shell"); setMinSize(0,0);
         fundoLateral.getStyleClass().add("window-side"); StackPane.setAlignment(fundoLateral,Pos.CENTER_RIGHT); painelDireito(0);
         Label nome=new Label("Conexo"); nome.getStyleClass().add("window-title"); nome.setMinWidth(0); nome.setMaxWidth(Double.MAX_VALUE); HBox.setHgrow(nome,Priority.ALWAYS);
@@ -65,7 +65,7 @@ final class MolduraJanela extends StackPane {
     private void capturar(MouseEvent e) { mouseX=e.getScreenX(); mouseY=e.getScreenY(); inicioX=janela.getX(); inicioY=janela.getY(); inicioLargura=janela.getWidth(); inicioAltura=janela.getHeight(); }
     private void arrastar() {
         barra.setOnMousePressed(e -> { if(!controle((Node)e.getTarget())) { capturar(e); arrastando=false; } });
-        barra.setOnMouseClicked(e -> { if(!controle((Node)e.getTarget()) && e.getClickCount()==2) deslize.alternarTamanho(); });
+        barra.setOnMouseClicked(e -> { if(!controle((Node)e.getTarget()) && e.getButton()==javafx.scene.input.MouseButton.PRIMARY && e.getClickCount()==2) deslize.alternarTamanho(); });
         barra.setOnMouseDragged(e -> {
             if(controle((Node)e.getTarget()) || !e.isPrimaryButtonDown() || !deslize.interagivel()) return;
             if(!arrastando) {
@@ -87,6 +87,6 @@ final class MolduraJanela extends StackPane {
         super.layoutChildren(); double w=getWidth(),h=getHeight(),a=Math.min(ALCANCE,Math.min(w,h)/2);
         double[][] limites={{0,0,a,a},{a,0,Math.max(0,w-2*a),a},{w-a,0,a,a},{w-a,a,a,Math.max(0,h-2*a)},
                 {w-a,h-a,a,a},{a,h-a,Math.max(0,w-2*a),a},{0,h-a,a,a},{0,a,a,Math.max(0,h-2*a)}};
-        for(int i=0;i<bordas.size();i++) { Region b=bordas.get(i); b.setVisible(!deslize.maximizada() && !deslize.animando()); double[] l=limites[i]; b.resizeRelocate(l[0],l[1],l[2],l[3]); }
+        for(int i=0;i<bordas.size();i++) { Region b=bordas.get(i); b.setVisible(!deslize.maximizada()); double[] l=limites[i]; b.resizeRelocate(l[0],l[1],l[2],l[3]); }
     }
 }

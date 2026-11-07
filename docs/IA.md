@@ -6,29 +6,40 @@ A integração escolhida é a **Groq**, usando sua API compatível com OpenAI. O
 
 O chat, os emojis, as salas e os temas funcionam normalmente. O botão **IA** informa que o assistente ainda não foi ativado. Não há respostas simuladas apresentadas como reais.
 
-## Ativar no computador do servidor
+## Ativar uma vez e abrir normalmente pelo Explorador
 
-1. Crie sua conta no [console da Groq](https://console.groq.com/) e gere uma chave em **API Keys**. Consulte os limites e as condições do plano escolhido. Não envie a chave pelo chat nem a publique no GitHub.
-2. Na pasta do projeto, copie `chat.properties.example` para `chat.properties`, se esse arquivo ainda não existir. Preserve as configurações de salas e banco que você já usa.
-3. No arquivo `chat.properties`, configure:
+1. Crie sua chave em **API Keys** no [console da Groq](https://console.groq.com/keys), se ainda não tiver uma.
+2. Na mesma pasta de `Servidor.cmd`, abra **ConfigurarIA.cmd** por duplo clique.
+3. Cole a chave completa na solicitação **Chave da Groq** e pressione Enter. O texto fica oculto.
+4. Aguarde a mensagem de conclusão. Esse configurador salva a chave com proteção do Windows e coloca `ai.enabled=true` no arquivo `chat.properties`, preservando salas, banco e o modelo que já estiver configurado.
+5. Encerre o servidor anterior, caso esteja aberto, e abra **Servidor.cmd** normalmente pelo Explorador de Arquivos.
+6. Reconecte os clientes e envie uma pergunta pelo botão **IA**.
 
-```properties
-ai.enabled=true
-ai.model=openai/gpt-oss-20b
-```
+Nas próximas vezes, basta abrir `Servidor.cmd`: a chave salva será carregada automaticamente. Isso funciona após fechar o PowerShell e reiniciar o computador, usando a conta do Windows que fez a configuração. A janela do servidor deve permanecer aberta durante o uso do chat, e esse computador precisa de internet para consultar a Groq.
 
-4. Abra o PowerShell **na pasta do projeto**, com o servidor anterior encerrado. Execute o bloco abaixo. A chave será solicitada de forma oculta, somente no seu computador:
+A chave é guardada no arquivo local `.local/ia/groq-key.dpapi`, protegida pela conta do Windows. Esse arquivo e a pasta `.local` são excluídos do GitHub e do ZIP de fontes. Os computadores dos participantes não precisam de chave. Ao instalar em outro computador ou usar outra conta do Windows, execute `ConfigurarIA.cmd` novamente nesse ambiente.
+
+Para trocar a chave, execute `ConfigurarIA.cmd` novamente e reinicie o servidor. Para desativar a IA, coloque `ai.enabled=false` em `chat.properties` e reinicie. A configuração de modelo continua sendo `ai.model`, com padrão `openai/gpt-oss-20b`.
+
+O servidor exibirá **Conexo IA: Groq ativada** quando a configuração estiver habilitada e houver chave. Essa indicação confirma a configuração local; a primeira pergunta verifica se a Groq aceita a chave e o modelo.
+
+## Uso temporário pelo PowerShell
+
+Também é possível fornecer `GROQ_API_KEY` somente para uma sessão. Essa variável tem prioridade sobre a chave salva. Para manter apenas a configuração temporária, defina `ai.enabled=true` em `chat.properties` e execute cada etapa abaixo no mesmo PowerShell:
 
 ```powershell
 $chaveGroq = Read-Host 'Cole sua chave da Groq' -AsSecureString
+```
+
+Quando aparecer a solicitação, cole a chave e pressione Enter. Depois execute:
+
+```powershell
 $credencialGroq = New-Object System.Management.Automation.PSCredential('groq', $chaveGroq)
 $env:GROQ_API_KEY = $credencialGroq.GetNetworkCredential().Password
 .\Servidor.cmd
 ```
 
-Mantenha esse terminal aberto. O servidor exibirá **Conexo IA: Groq ativada** quando a chave estiver presente e `ai.enabled=true`; essa indicação confirma a configuração local, não uma autenticação já verificada na API. A primeira pergunta confirma se a chave, o modelo e a conta são aceitos pelo serviço.
-
-A variável definida nesse exemplo vale apenas para esse terminal e seus processos. Ao encerrar o terminal, repita o bloco na próxima execução. Abrir `Servidor.cmd` por duplo clique em outra janela não recebe essa variável temporária. Os computadores dos participantes **não precisam de chave**. Somente o computador servidor precisa de internet para consultar a IA.
+A variável temporária termina com essa sessão. Use **ConfigurarIA.cmd** para que a chave seja lembrada nas próximas execuções pelo Explorador.
 
 ## Escolher entre privado e sala
 

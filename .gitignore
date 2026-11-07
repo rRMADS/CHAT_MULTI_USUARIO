@@ -10,6 +10,8 @@ tmp/
 .settings/
 chat.properties
 cliente.properties
+.local/
+*.dpapi
 *.log
 entrega/
 *.mv.db
