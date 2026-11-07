@@ -1,6 +1,7 @@
 target/
 data/
 tmp/
+output/
 .m2/
 .tools/
 .idea/

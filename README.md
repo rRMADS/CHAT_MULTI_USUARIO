@@ -183,4 +183,6 @@ Os scripts do Maven Wrapper são do projeto Apache Maven Wrapper e têm licença
 
 - [Análise dos documentos e requisitos](docs/REQUISITOS.md)
 - [Arquitetura e concorrência](docs/ARQUITETURA.md)
-- [Plano de evolução e apresentação](docs/PLANO.md)
+- [Instruções para o professor](docs/INSTRUCOES_PROFESSOR.md)
+- [Configuração da IA](docs/IA.md)
+- [Fluxograma em PDF](docs/Fluxograma_Conexo_Chat_Multiusuario.pdf)
