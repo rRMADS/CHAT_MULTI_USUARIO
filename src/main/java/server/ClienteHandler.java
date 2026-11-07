@@ -16,24 +16,31 @@ import static protocol.Evento.Tipo.*;
 public final class ClienteHandler implements Runnable, ConexaoCliente {
     private final Socket socket;
     private final SalaService salas;
-    private final ArrayBlockingQueue<Evento> saida = new ArrayBlockingQueue<>(256);
+    private final ArrayBlockingQueue<Evento> saida = new ArrayBlockingQueue<>(512);
     private volatile boolean ativo = true;
-    private Usuario usuario;
+    private volatile Usuario usuario;
+    private String sessao="",salaDesejada="geral";
     private volatile boolean encerrarAposErro;
     private final CountDownLatch erroEntregue = new CountDownLatch(1);
     public ClienteHandler(Socket socket, SalaService salas) {
         this.socket = socket; this.salas = salas;
     }
     @Override public Usuario getUsuario() { return usuario; }
+    @Override public void atualizarUsuario(Usuario usuario) { this.usuario=usuario; }
+    @Override public String sessao() { return sessao; }
+    @Override public String salaDesejada() { return salaDesejada; }
     @Override public void run() {
         Thread writer = new Thread(this::escrever, "chat-saida-" + socket.getPort()); writer.setDaemon(true); writer.start();
         try {
             // O socket é o dono dos streams e será fechado no finally, depois de enviar eventuais erros.
             var leitor = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
             socket.setSoTimeout(10_000);
-            String apresentacao = lerLinhaLimitada(leitor, 256);
+            String apresentacao = lerLinhaLimitada(leitor, 384);
             if (apresentacao == null) return;
-            usuario = Protocolo.identificar(apresentacao); salas.conectar(this);
+            usuario = Protocolo.identificar(apresentacao);
+            var campos=Protocolo.decodificar(apresentacao).campos();
+            if(campos.size()==4) { sessao=campos.get(2); salaDesejada=campos.get(3); }
+            salas.conectar(this);
             socket.setSoTimeout(90_000);
             long ultimaDigitacao = 0;
             while (ativo) {

@@ -215,3 +215,16 @@
 .md-code .content { -fx-background-color: -conexo-inset; }
 .ai-answer-scroll, .ai-answer-scroll > .viewport { -fx-background-color: -conexo-surface; -fx-background-radius: 11; -fx-border-color: -conexo-border; -fx-border-radius: 11; -fx-padding: 0; }
 .emoji-grid-scroll, .emoji-grid-scroll > .viewport { -fx-background-color: transparent; -fx-padding: 0; -fx-border-width: 0; }
+
+.message-action { -fx-background-color:transparent; -fx-text-fill:-conexo-muted; -fx-font-size:12px; -fx-padding:4 7; -fx-background-radius:7; }
+.message-action:hover { -fx-background-color:-conexo-own; -fx-text-fill:-conexo-text; }
+.message-quote { -fx-background-color:-conexo-inset; -fx-border-color:transparent transparent transparent -conexo-accent; -fx-border-width:0 0 0 3; -fx-padding:9 12; -fx-background-radius:8; }
+.reaction-chip { -fx-font-family:"Segoe UI Emoji", "Segoe UI", sans-serif; -fx-background-color:-conexo-inset; -fx-text-fill:-conexo-text; -fx-border-color:-conexo-border; -fx-border-radius:12; -fx-background-radius:12; -fx-padding:4 9; -fx-font-size:13px; }
+.reaction-own { -fx-border-color:-conexo-accent; -fx-background-color:-conexo-own; }
+.mention-me { -fx-border-color:-conexo-accent; -fx-border-width:2; }
+.mention-label { -fx-text-fill:-conexo-accent; -fx-font-size:12px; -fx-font-weight:bold; }
+.mention-notice { -fx-background-color:-conexo-own; -fx-text-fill:-conexo-text; -fx-font-size:13px; -fx-padding:9 16; -fx-background-radius:0; }
+.command-suggestions { -fx-background-color:-conexo-surface; -fx-border-color:-conexo-border; -fx-border-radius:11; -fx-background-radius:11; -fx-padding:10; }
+.command-suggestions .list-view { -fx-background-color:-conexo-surface; -fx-border-width:0; }
+.command-suggestions .list-cell { -fx-background-color:-conexo-surface; -fx-text-fill:-conexo-text; -fx-padding:9 10; -fx-font-size:13px; }
+.command-suggestions .list-cell:filled:hover, .command-suggestions .list-cell:filled:selected { -fx-background-color:-conexo-own; }

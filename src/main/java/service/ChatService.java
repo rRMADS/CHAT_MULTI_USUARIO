@@ -1,6 +1,8 @@
 package service;
 
 import model.Mensagem;
+import model.Citacao;
+import model.Mencoes;
 import model.Usuario;
 import model.Sala;
 import persistence.MensagemRepository;
@@ -36,6 +38,7 @@ public final class ChatService {
         try {
             cliente.enviar(Evento.de(BEM_VINDO, cliente.getUsuario().nome(), sala.id(), sala.nome(),cliente.getUsuario().emoji().id()));
             historico(cliente, ultimas, "Últimas mensagens");
+            enviarFixadas(cliente);
             broadcast(Evento.de(SISTEMA, cliente.getUsuario().nome() + " entrou no chat."));
             publicarUsuarios();
         } catch (RuntimeException e) { registry.remover(cliente); throw e; }
@@ -48,9 +51,16 @@ public final class ChatService {
         }
     }
     public synchronized Mensagem enviarMensagem(ConexaoCliente cliente, String conteudo) {
+        return responder(cliente,null,conteudo);
+    }
+    public synchronized Mensagem responder(ConexaoCliente cliente,Long id,String conteudo) {
         exigirConectado(cliente);
-        Mensagem salva = repository.salvar(new Mensagem(null, cliente.getUsuario(), conteudo, LocalDateTime.now(clock)));
-        broadcast(eventoMensagem(salva)); return salva;
+        Citacao citacao=id==null ? null : Citacao.de(exigirMensagem(id));
+        Mensagem salva=repository.salvar(new Mensagem(null,cliente.getUsuario(),conteudo,LocalDateTime.now(clock),model.FormatoMensagem.TEXTO,citacao));
+        broadcast(eventoMensagem(salva));
+        for(var c:registry.snapshot()) if(c!=cliente && Mencoes.contem(salva.conteudo(),c.getUsuario().nome()))
+            enviarSeguro(c,Evento.de(MENCAO,salva.id().toString(),salva.remetente().nome()));
+        return salva;
     }
     public synchronized void enviarPrivada(ConexaoCliente origem, String apelido, String texto) {
         exigirConectado(origem);
@@ -95,10 +105,11 @@ public final class ChatService {
         confirmacoesLimpeza.clear();
         // A exclusão e o evento ficam no mesmo lock dos envios: nenhum sucesso antes do commit.
         broadcast(Evento.de(HISTORICO_LIMPO, sala.id(), sala.nome(), cliente.getUsuario().nome(), Integer.toString(removidas)));
+        publicarFixadas();
     }
     private void historico(ConexaoCliente cliente, List<Mensagem> mensagens, String titulo) {
         cliente.enviar(Evento.de(HISTORICO_INICIO, titulo));
-        mensagens.forEach(m -> cliente.enviar(eventoMensagem(m)));
+        mensagens.forEach(m -> { cliente.enviar(eventoMensagem(m)); enviarReacoes(cliente,m.id()); });
         cliente.enviar(Evento.de(HISTORICO_FIM, Integer.toString(mensagens.size())));
     }
     public synchronized long versaoHistorico() { return versaoHistorico; }
@@ -128,7 +139,46 @@ public final class ChatService {
         if (houveFalha) publicarUsuarios();
     }
     private Evento eventoMensagem(Mensagem m) {
-        return Evento.de(MENSAGEM, m.id().toString(), m.remetente().nome(), m.conteudo(), m.horario().toString(),m.remetente().emoji().id(),m.formato().name());
+        return Evento.de(MENSAGEM, m.id().toString(), m.remetente().nome(), m.conteudo(), m.horario().toString(),m.remetente().emoji().id(),m.formato().name(),
+                m.citacao()==null ? "" : Long.toString(m.citacao().id()), m.citacao()==null ? "" : m.citacao().autor(), m.citacao()==null ? "" : m.citacao().texto());
+    }
+    public synchronized void validarPerfil(ConexaoCliente cliente,Usuario usuario) {
+        if(usuario.nome().equalsIgnoreCase("Conexo IA")) throw new IllegalArgumentException("Este apelido é reservado ao assistente.");
+        for(var c:registry.snapshot()) if(c!=cliente && c.getUsuario().equals(usuario)) throw new IllegalArgumentException("Este apelido já está em uso nesta sala.");
+    }
+    public synchronized void perfilAlterado(ConexaoCliente cliente,Usuario anterior) {
+        broadcast(Evento.de(PERFIL_ALTERADO,anterior.nome(),cliente.getUsuario().nome(),cliente.getUsuario().emoji().id()));
+        publicarUsuarios();
+    }
+    public synchronized void reagir(ConexaoCliente cliente,long id,String emoji) {
+        exigirConectado(cliente); exigirMensagem(id); model.Reacao.validar(emoji);
+        repository.alternarReacao(id,identificador(cliente),emoji);
+        for(var c:registry.snapshot()) enviarSeguro(c,eventoReacoes(c,id));
+    }
+    private String identificador(ConexaoCliente c) { return c.sessao().isEmpty() ? c.getUsuario().nome().toLowerCase(java.util.Locale.ROOT) : c.sessao(); }
+    private Evento eventoReacoes(ConexaoCliente c,long id) {
+        var campos=new ArrayList<String>(); campos.add(Long.toString(id));
+        for(var r:repository.reacoes(id,identificador(c))) { campos.add(r.emoji()); campos.add(Integer.toString(r.quantidade())); campos.add(Boolean.toString(r.minha())); }
+        return new Evento(REACOES,campos);
+    }
+    private void enviarReacoes(ConexaoCliente c,long id) { c.enviar(eventoReacoes(c,id)); }
+    private Mensagem exigirMensagem(long id) { return repository.buscarPorId(id).orElseThrow(()->new IllegalArgumentException("Esta mensagem não está mais disponível nesta sala.")); }
+    public synchronized void fixar(ConexaoCliente cliente,long id,boolean fixar) {
+        exigirConectado(cliente); exigirMensagem(id);
+        var atuais=repository.fixadas();
+        if(fixar && atuais.size()>=5 && atuais.stream().noneMatch(m->m.id()==id)) throw new IllegalArgumentException("A sala permite até 5 mensagens fixadas. Remova uma antes de fixar outra.");
+        repository.fixar(id,fixar); publicarFixadas();
+        broadcast(Evento.de(SISTEMA,cliente.getUsuario().nome()+(fixar ? " fixou" : " desafixou")+" uma mensagem da sala."));
+    }
+    private Evento eventoFixadas() {
+        var campos=new ArrayList<String>();
+        for(var m:repository.fixadas()) campos.addAll(eventoMensagem(m).campos().subList(0,6));
+        return new Evento(FIXADAS,campos);
+    }
+    private void enviarFixadas(ConexaoCliente c) { c.enviar(eventoFixadas()); }
+    private void publicarFixadas() { broadcast(eventoFixadas()); }
+    private void enviarSeguro(ConexaoCliente c,Evento evento) {
+        try { c.enviar(evento); } catch(RuntimeException e) { desconectar(c); c.fechar(); }
     }
     private void exigirConectado(ConexaoCliente c) {
         if (!registry.snapshot().contains(c)) throw new IllegalArgumentException("Conecte-se novamente para enviar mensagens.");

@@ -74,6 +74,12 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Abertura e fechamento suaves da janela inteira, incluindo a moldura, sem deslocar as bordas do conteúdo ou redimensionar a janela durante a animação. Fechar durante a abertura continua a partir do ponto atual, sem piscar.
 - Ícones vetoriais em botões, mensagens privadas, menus e avisos; paleta Violeta suave e temas Roxo (padrão), Claro e Escuro em campos, seletores e popups.
 - Movimento do ícone ao enviar e indicação de mensagem pública salva no servidor após a confirmação do histórico. Essa indicação não confirma leitura.
+- Respostas com citação: use **Responder** abaixo de uma mensagem pública. A prévia acima da barra permite cancelar antes do envio.
+- Reações compartilhadas: use **Reagir** ou clique em uma reação existente para adicionar/remover a sua. Contagens ficam no histórico.
+- Menções com `@apelido` ou `@"Ana Silva"`; o botão **@** insere os nomes da sala. A mensagem recebe destaque e um aviso clicável. Menções não lidas aparecem no título quando a janela está em segundo plano ou minimizada.
+- **Editar perfil** permite mudar apelido e emoji durante a conversa. O servidor recusa apelidos duplicados; mensagens anteriores mantêm a identidade original.
+- **Fixar/Desafixar** destaca até 5 mensagens públicas por sala; o botão **Fixadas** abre os avisos completos. Qualquer participante da sala pode administrá-los.
+- Reconexão automática após uma queda: tenta voltar ao mesmo servidor e sala, com intervalo progressivo de 1 a 30 segundos. Preserva o rascunho e atualiza o histórico público. Não repete os envios pendentes. Sair ou fechar encerra as tentativas.
 - Emojis 3D com brilho nas mensagens e na lista de participantes, mensagens privadas em destaque e rolagem suave com atalho para novas mensagens. O emoji é preservado no histórico público.
 - Escolha de tema com três botões visuais (estrela, sol e lua), destaque deslizante e reação dos ícones ao passar o mouse. Aplicada sem desconectar e lembrada neste computador em `cliente.properties`.
 - Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
@@ -85,7 +91,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Heartbeat e recuperação do histórico por reconexão manual após queda.
 - Filas limitadas por cliente para que um destinatário lento não bloqueie o broadcast.
 
-Privadas não ficam no banco e desaparecem ao sair, trocar de sala ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre na respectiva sala deste servidor. As salas são públicas e não têm senha.
+Privadas não ficam no banco e desaparecem ao sair, trocar de sala, reconectar ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre na respectiva sala deste servidor. As salas são públicas e não têm senha.
 
 ## Conexo IA
 
@@ -93,11 +99,11 @@ O botão **IA**, ao lado de Histórico, abre o assistente com as opções **Priv
 
 A integração usa Groq e vem desativada. Abra **ConfigurarIA.cmd** uma vez no computador servidor, cole sua chave na solicitação oculta e aguarde a conclusão. Depois abra **Servidor.cmd** normalmente pelo Explorador; a chave será carregada automaticamente nas próximas execuções. O servidor precisa de internet; participantes não precisam de chave. Sem chave, o chat continua funcionando e o assistente informa que ainda não foi ativado. Siga o [guia de ativação da IA](docs/IA.md), que também explica os limites, o modelo e como testar. Não coloque a chave nos fontes, no chat ou no GitHub.
 
-Atualize e reinicie **servidor e clientes juntos**: o novo protocolo exige a identificação com emoji. Mensagens antigas permanecem no banco e recebem o emoji de sorriso na migração automática.
+Atualize e reinicie **servidor e clientes juntos**: o protocolo inclui identificação com emoji, sessão de reconexão, citações, reações, menções e avisos. O banco é atualizado automaticamente, preservando mensagens antigas.
 
 ## Comandos
 
-Digite o comando no campo de mensagens e pressione **Enter** ou clique em **Enviar**. Digitar apenas `/` e enviar também abre a ajuda. O botão **Comandos /** mostra a mesma ajuda, com exemplos das salas realmente configuradas no servidor.
+Ao digitar apenas **`/`**, o painel de comandos abre automaticamente, com descrições e rolagem. Continue digitando para filtrar, clique em uma opção ou use **↓** e **Enter** para preencher a barra. **Esc** recolhe o painel. Escolher uma sugestão não a executa; complete o comando e pressione **Enter** ou **Enviar**. O botão **Comandos /** também abre esse painel. Enviar `/help` ou apenas `/` mostra a ajuda completa, incluindo as salas configuradas no servidor.
 
 | Comando | Resultado |
 | --- | --- |
@@ -107,6 +113,10 @@ Digite o comando no campo de mensagens e pressione **Enter** ou clique em **Envi
 | `/users` ou `/usuarios` | Mostra os participantes da sala em uma resposta visível |
 | `/history 50` ou `/historico 50` | Carrega as últimas 50 mensagens públicas da sala atual; aceita 1 a 200 |
 | `/buscar texto` | Busca literal, sem diferenciar maiúsculas, nas mensagens públicas da sala atual; até 100 resultados |
+| `/responder 12 texto` | Responde à mensagem pública #12, preservando uma citação do original |
+| `/reagir 12 💜` | Adiciona ou remove sua reação na mensagem #12; opções: 👍 💜 😂 🎉 👏 😮 |
+| `/fixar 12` ou `/desfixar 12` | Atualiza os avisos da sala; até 5 mensagens fixadas |
+| `/perfil dragon Ana Silva` | Altera emoji e apelido sem desconectar; os botões do perfil facilitam a escolha |
 | `/limpar` | Solicita a limpeza permanente do histórico público da sala atual, sem apagar imediatamente |
 | `/limpar confirmar` | Confirma o pedido em até 30 segundos; apaga do banco e remove as mensagens públicas da tela de todos na sala |
 | `/limpar cancelar` | Cancela seu pedido de limpeza |

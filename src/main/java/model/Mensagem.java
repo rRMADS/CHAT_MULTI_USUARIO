@@ -4,7 +4,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Objects;
 
-public record Mensagem(Long id, Usuario remetente, String conteudo, LocalDateTime horario, FormatoMensagem formato) {
+public record Mensagem(Long id, Usuario remetente, String conteudo, LocalDateTime horario, FormatoMensagem formato, Citacao citacao) {
+    public Mensagem(Long id, Usuario remetente, String conteudo, LocalDateTime horario, FormatoMensagem formato) {
+        this(id,remetente,conteudo,horario,formato,null);
+    }
     public Mensagem(Long id, Usuario remetente, String conteudo, LocalDateTime horario) {
         this(id,remetente,conteudo,horario,FormatoMensagem.TEXTO);
     }
@@ -27,7 +30,7 @@ public record Mensagem(Long id, Usuario remetente, String conteudo, LocalDateTim
     public static Mensagem respostaIA(String conteudo,LocalDateTime horario) {
         return new Mensagem(null,new Usuario("Conexo IA","robot"),conteudo,horario,FormatoMensagem.MARKDOWN_IA);
     }
-    public Mensagem comId(Long novoId) { return new Mensagem(novoId, remetente, conteudo, horario,formato); }
+    public Mensagem comId(Long novoId) { return new Mensagem(novoId, remetente, conteudo, horario,formato,citacao); }
     public String formatar() {
         return "[" + horario.format(DateTimeFormatter.ofPattern("dd/MM HH:mm")) + "] " + remetente.nome() + ": " + conteudo;
     }

@@ -17,10 +17,18 @@ public final class Protocolo {
     public static String apresentar(model.Usuario usuario) {
         return codificar(Evento.de(Evento.Tipo.APRESENTACAO, usuario.nome(), usuario.emoji().id()));
     }
+    public static String apresentar(model.Usuario usuario,String sessao,String sala) {
+        String linha=codificar(Evento.de(Evento.Tipo.APRESENTACAO,usuario.nome(),usuario.emoji().id(),sessao,sala));
+        identificar(linha); return linha;
+    }
     public static model.Usuario identificar(String linha) {
         try {
             Evento e = decodificar(linha);
-            if(e.tipo()!=Evento.Tipo.APRESENTACAO || e.campos().size()!=2) throw new IllegalArgumentException();
+            if(e.tipo()!=Evento.Tipo.APRESENTACAO || (e.campos().size()!=2 && e.campos().size()!=4)) throw new IllegalArgumentException();
+            if(e.campos().size()==4) {
+                java.util.UUID.fromString(e.campo(2));
+                if(!e.campo(3).matches("[a-z0-9_-]{1,30}")) throw new IllegalArgumentException();
+            }
             return new model.Usuario(e.campo(0),e.campo(1));
         } catch(RuntimeException e) {
             throw new IllegalArgumentException("Entre pelo cliente atualizado e escolha apelido e emoji de identificação.");

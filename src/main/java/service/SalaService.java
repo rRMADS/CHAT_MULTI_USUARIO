@@ -18,6 +18,7 @@ public final class SalaService implements AutoCloseable {
     private final Map<String, Conversa> salas = new LinkedHashMap<>();
     private final Map<ConexaoCliente, Conversa> participantes = new IdentityHashMap<>();
     private final ia.AssistenteIA assistente;
+    private final Map<String,ConexaoCliente> sessoes=new LinkedHashMap<>();
     private static final class Consulta {
         final Conversa conversa; final String pergunta, alcance; long versao;
         java.util.concurrent.Future<?> tarefa;
@@ -42,12 +43,21 @@ public final class SalaService implements AutoCloseable {
     }
     public synchronized void conectar(ConexaoCliente cliente) {
         if (participantes.containsKey(cliente)) throw new IllegalArgumentException("Esta conexão já entrou em uma sala.");
-        var geral = salas.get(Sala.GERAL.id()); geral.chat().conectar(cliente);
-        participantes.put(cliente, geral); publicarSalas();
+        if(!cliente.sessao().isEmpty()) {
+            var anterior=sessoes.get(cliente.sessao());
+            if(anterior!=null && anterior!=cliente) {
+                cliente.atualizarUsuario(anterior.getUsuario()); desconectar(anterior); anterior.fechar();
+            }
+        }
+        var inicial=salas.getOrDefault(cliente.salaDesejada(),salas.get(Sala.GERAL.id())); inicial.chat().conectar(cliente);
+        participantes.put(cliente, inicial);
+        if(!cliente.sessao().isEmpty()) sessoes.put(cliente.sessao(),cliente);
+        publicarSalas();
         cliente.enviar(Evento.de(Evento.Tipo.IA_DISPONIVEL,Boolean.toString(assistente.disponivel())));
     }
     public synchronized void desconectar(ConexaoCliente cliente) {
         cancelarConsulta(cliente); ultimaConsulta.remove(cliente);
+        if(!cliente.sessao().isEmpty()) sessoes.remove(cliente.sessao(),cliente);
         var anterior = participantes.remove(cliente);
         if (anterior != null) { anterior.chat().desconectar(cliente); publicarSalas(); }
     }
@@ -76,6 +86,13 @@ public final class SalaService implements AutoCloseable {
             enviarSalas(cliente); cliente.enviar(Evento.resposta("Salas disponíveis", "Você está em " + atual.sala().nome() + ".\n\n" + textoSalas()));
         }
         else if(pedido.isPresent() && pedido.get().nome().equals("/ia")) perguntarIA(cliente,atual,pedido.get().argumentos());
+        else if(pedido.isPresent() && pedido.get().nome().equals("/perfil")) {
+            var p=pedido.get().argumentos().split("\\s+",2);
+            if(p.length!=2) throw new IllegalArgumentException("Use /perfil emoji apelido ou o botão Editar perfil.");
+            var novo=new model.Usuario(p[1],p[0]); atual.chat().validarPerfil(cliente,novo);
+            var anterior=cliente.getUsuario(); cancelarConsulta(cliente); atual.chat().digitando(cliente,false);
+            cliente.atualizarUsuario(novo); atual.chat().perfilAlterado(cliente,anterior);
+        }
         else atual.comandos().executar(cliente, linha);
     }
     private void perguntarIA(ConexaoCliente cliente,Conversa conversa,String argumentos) {

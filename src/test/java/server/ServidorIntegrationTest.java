@@ -175,13 +175,41 @@ class ServidorIntegrationTest {
             }
         }
     }
+    @Test void citacoesReacoesMencoesPerfilEFixadasAtravessamSocket() throws Exception {
+        try(var s=servidor();var ana=new Cliente(s,"Ana Silva");var bruno=new Cliente(s,"Bruno")) {
+            ana.enviar("/ping"); ana.ate(PONG); bruno.enviar("/ping"); bruno.ate(PONG);
+            ana.enviar("Original"); var original=ana.ate(MENSAGEM); bruno.ate(MENSAGEM); String id=original.campo(0);
+            bruno.enviar("/responder "+id+" Olá @\"Ana Silva\"");
+            var resposta=ana.ate(MENSAGEM); bruno.ate(MENSAGEM); assertEquals(id,resposta.campo(6)); assertEquals("Ana Silva",resposta.campo(7)); assertEquals("Original",resposta.campo(8));
+            assertEquals(resposta.campo(0),ana.ate(MENCAO).campo(0));
+            bruno.enviar("/reagir "+id+" 💜"); assertEquals("true",bruno.ate(REACOES).campo(3)); assertEquals("false",ana.ate(REACOES).campo(3));
+            ana.enviar("/fixar "+id); assertEquals(id,bruno.ate(FIXADAS).campo(0)); ana.ate(FIXADAS);
+            ana.enviar("/perfil party Ana Nova"); assertEquals("Ana Nova",bruno.ate(PERFIL_ALTERADO).campo(1)); ana.ate(PERFIL_ALTERADO);
+            ana.enviar("Nova identidade"); assertEquals("party",bruno.ate(MENSAGEM).campo(4)); ana.ate(MENSAGEM);
+            try(var novo=new Cliente(s,"Carla")) { assertEquals(id,novo.historico.get(1).campo(6)); assertEquals(id,novo.ate(FIXADAS).campo(0)); }
+        }
+    }
+    @Test void mesmaSessaoRetomaConexaoAntigaSemPermitirApelidoDuplicado() throws Exception {
+        String token=UUID.randomUUID().toString();
+        try(var s=servidor(); var original=new Cliente(s,"Ana",token,"geral")) {
+            original.enviar("/perfil dragon Ana Nova"); original.ate(PERFIL_ALTERADO);
+            original.enviar("Original"); String id=original.ate(MENSAGEM).campo(0);
+            original.enviar("/reagir "+id+" 👍"); assertEquals("1",original.ate(REACOES).campo(2));
+            try(var retomada=new Cliente(s,"Ana Antiga",token,"geral")) {
+                assertEquals("Ana Nova",retomada.entrada.campo(0)); assertEquals("dragon",retomada.entrada.campo(3));
+                retomada.enviar("/ping"); retomada.ate(PONG); retomada.enviar("/reagir "+id+" 👍"); assertEquals(1,retomada.ate(REACOES).campos().size());
+                retomada.enviar("Continuamos"); assertEquals("Continuamos",retomada.ate(MENSAGEM).campo(2));
+            }
+        }
+    }
     private static final class Cliente implements AutoCloseable {
-        final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
-        Cliente(Servidor s, String nome) throws IOException {
+        final Evento entrada; final Socket socket; final PrintWriter writer; final BufferedReader reader; final List<Evento> historico = new ArrayList<>();
+        Cliente(Servidor s,String nome) throws IOException { this(s,nome,"","geral"); }
+        Cliente(Servidor s, String nome,String token,String sala) throws IOException {
             socket = new Socket("127.0.0.1", s.porta()); socket.setSoTimeout(8000);
             writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
-            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)); writer.println(Protocolo.apresentar(new model.Usuario(nome)));
-            assertEquals(BEM_VINDO, ler().tipo());
+            reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8)); writer.println(token.isEmpty() ? Protocolo.apresentar(new model.Usuario(nome)) : Protocolo.apresentar(new model.Usuario(nome),token,sala));
+            entrada=ler(); assertEquals(BEM_VINDO, entrada.tipo());
             Evento e; do { e = ler(); if (e.tipo() == MENSAGEM) historico.add(e); } while (e.tipo() != HISTORICO_FIM);
         }
         Evento ler() throws IOException { String linha = reader.readLine(); if (linha == null) throw new EOFException(); return Protocolo.decodificar(linha); }

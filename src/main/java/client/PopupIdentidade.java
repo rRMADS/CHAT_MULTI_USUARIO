@@ -62,6 +62,9 @@ final class PopupIdentidade extends Dialog<Usuario> {
         apelido.textProperty().addListener((o,a,b) -> validar(erro));
         setResultConverter(botao -> botao==entrar ? new Usuario(apelido.getText(),escolhido.id()) : null);
     }
+    PopupIdentidade(Window janela,Temas temas,Usuario usuario) {
+        this(janela,temas,usuario.nome()); botoes.get(usuario.emoji()).fire();
+    }
     private void validar(Label erro) {
         try { new Usuario(apelido.getText(),escolhido==null ? "" : escolhido.id()); erro.setText("Seu emoji aparecerá nas mensagens e nos participantes."); getDialogPane().lookupButton(entrar).setDisable(false); }
         catch(IllegalArgumentException e) { erro.setText(e.getMessage()); getDialogPane().lookupButton(entrar).setDisable(true); }

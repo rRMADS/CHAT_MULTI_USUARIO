@@ -149,7 +149,7 @@ class ChatServiceTest {
         var comandos = new CommandService(chat); comandos.executar(ana,"/limpar");
         assertThrows(IllegalArgumentException.class, () -> comandos.executar(bruno,"/limpar confirmar"));
         ana.limpar(); bruno.limpar(); comandos.executar(ana,"/limpar confirmar");
-        assertEquals(List.of(Evento.de(HISTORICO_LIMPO,"geral","Geral","Ana Silva","1")), ana.recebidos);
+        assertEquals(List.of(Evento.de(HISTORICO_LIMPO,"geral","Geral","Ana Silva","1"),Evento.de(FIXADAS)), ana.recebidos);
         assertEquals(ana.recebidos,bruno.recebidos); assertTrue(repository.buscarUltimas(50).isEmpty());
         assertThrows(IllegalArgumentException.class, () -> comandos.executar(ana,"/limpar confirmar"));
         assertEquals("Nova",chat.enviarMensagem(ana,"Nova").conteudo());
