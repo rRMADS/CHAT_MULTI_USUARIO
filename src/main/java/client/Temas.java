@@ -85,13 +85,7 @@ final class Temas {
         seletores.forEach(r -> {
             if (r.get() != null) r.get().atualizar(tema, true);
         });
-        Properties p = new Properties();
-        p.setProperty("tema", tema.name());
-        try (var escritor = Files.newBufferedWriter(arquivo)) {
-            p.store(escritor, "Preferencia de tema do Conexo");
-        } catch (IOException ignored) {
-            /* Não impedir a conversa se a pasta for somente leitura. */
-        }
+        new PreferenciasCliente(arquivo).salvar("tema", tema.name());
     }
 
     SeletorTema seletor(boolean lateral) {

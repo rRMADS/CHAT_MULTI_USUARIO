@@ -10,7 +10,18 @@ public record Mensagem(
         String conteudo,
         LocalDateTime horario,
         FormatoMensagem formato,
-        Citacao citacao) {
+        Citacao citacao,
+        Anexo anexo) {
+    public Mensagem(
+            Long id,
+            Usuario remetente,
+            String conteudo,
+            LocalDateTime horario,
+            FormatoMensagem formato,
+            Citacao citacao) {
+        this(id, remetente, conteudo, horario, formato, citacao, null);
+    }
+
     public Mensagem(
             Long id,
             Usuario remetente,
@@ -30,7 +41,7 @@ public record Mensagem(
         Objects.requireNonNull(formato, "Formato obrigatório");
         boolean ia = formato == FormatoMensagem.MARKDOWN_IA;
         if (ia
-                && (!remetente.nome().equals("Conexo IA")
+                && (!Marca.assistente(remetente.nome())
                         || remetente.emoji() != EmojiIdentificacao.ROBOT))
             throw new MensagemInvalidaException("Formato reservado às respostas do assistente.");
         if (ia && conteudo != null) conteudo = conteudo.replace("\r\n", "\n").replace('\r', '\n');
@@ -53,14 +64,14 @@ public record Mensagem(
     public static Mensagem respostaIA(String conteudo, LocalDateTime horario) {
         return new Mensagem(
                 null,
-                new Usuario("Conexo IA", "robot"),
+                new Usuario("Orkut IA", "robot"),
                 conteudo,
                 horario,
                 FormatoMensagem.MARKDOWN_IA);
     }
 
     public Mensagem comId(Long novoId) {
-        return new Mensagem(novoId, remetente, conteudo, horario, formato, citacao);
+        return new Mensagem(novoId, remetente, conteudo, horario, formato, citacao, anexo);
     }
 
     public String formatar() {

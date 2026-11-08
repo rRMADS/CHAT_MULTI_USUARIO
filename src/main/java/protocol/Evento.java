@@ -25,7 +25,21 @@ public record Evento(Tipo tipo, List<String> campos) {
         REACOES,
         FIXADAS,
         MENCAO,
-        PERFIL_ALTERADO
+        PERFIL_ALTERADO,
+        ATIVIDADE_SALA,
+        BUSCA_FILTROS,
+        RESUMIR,
+        ARQUIVO_INICIO,
+        ARQUIVO_PARTE,
+        ARQUIVO_FIM,
+        ARQUIVO_CANCELAR,
+        ARQUIVO_PEDIR,
+        ARQUIVO_PROGRESSO,
+        ARQUIVO_ERRO,
+        ARQUIVO_PRONTO,
+        DOWNLOAD_INICIO,
+        DOWNLOAD_PARTE,
+        DOWNLOAD_FIM
     }
 
     public Evento {

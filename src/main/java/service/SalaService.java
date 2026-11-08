@@ -22,6 +22,7 @@ public final class SalaService implements AutoCloseable {
     private final Map<String, Conversa> salas = new LinkedHashMap<>();
     private final Map<ConexaoCliente, Conversa> participantes = new IdentityHashMap<>();
     private final ia.AssistenteIA assistente;
+    private final TransferenciasServidor arquivos = new TransferenciasServidor();
     private final Map<String, ConexaoCliente> sessoes = new LinkedHashMap<>();
 
     private static final class Consulta {
@@ -88,6 +89,7 @@ public final class SalaService implements AutoCloseable {
 
     public synchronized void desconectar(ConexaoCliente cliente) {
         cancelarConsulta(cliente);
+        arquivos.cancelar(cliente);
         ultimaConsulta.remove(cliente);
         if (!cliente.sessao().isEmpty()) sessoes.remove(cliente.sessao(), cliente);
         var anterior = participantes.remove(cliente);
@@ -112,6 +114,7 @@ public final class SalaService implements AutoCloseable {
         // O lock da central impede que outra mensagem seja roteada durante a movimentação.
         proxima.chat().conectar(cliente);
         cancelarConsulta(cliente);
+        arquivos.cancelar(cliente);
         participantes.put(cliente, proxima);
         anterior.chat().desconectar(cliente);
         publicarSalas();
@@ -125,33 +128,122 @@ public final class SalaService implements AutoCloseable {
 
     public synchronized void executar(ConexaoCliente cliente, String linha) {
         var atual = exigirParticipante(cliente);
-        var pedido = ComandoChat.ler(linha);
-        if (pedido.isPresent() && pedido.get().nome().equals("/join")) {
-            if (pedido.get().argumentos().isBlank())
-                throw new IllegalArgumentException(
-                        "Informe uma sala. Exemplos disponíveis: " + exemplosSalas());
-            trocarSala(cliente, pedido.get().argumentos());
-        } else if (pedido.isPresent() && pedido.get().nome().equals("/salas")) {
-            enviarSalas(cliente);
-            cliente.enviar(
-                    Evento.resposta(
-                            "Salas disponíveis",
-                            "Você está em " + atual.sala().nome() + ".\n\n" + textoSalas()));
-        } else if (pedido.isPresent() && pedido.get().nome().equals("/ia"))
-            perguntarIA(cliente, atual, pedido.get().argumentos());
-        else if (pedido.isPresent() && pedido.get().nome().equals("/perfil")) {
-            var p = pedido.get().argumentos().split("\\s+", 2);
-            if (p.length != 2)
-                throw new IllegalArgumentException(
-                        "Use /perfil emoji apelido ou o botão Editar perfil.");
-            var novo = new model.Usuario(p[1], p[0]);
-            atual.chat().validarPerfil(cliente, novo);
-            var anterior = cliente.getUsuario();
-            cancelarConsulta(cliente);
-            atual.chat().digitando(cliente, false);
-            cliente.atualizarUsuario(novo);
-            atual.chat().perfilAlterado(cliente, anterior);
-        } else atual.comandos().executar(cliente, linha);
+        var antes = atual.chat().ultimaPublicacao();
+        try {
+            if (linha.startsWith(protocol.Protocolo.PREFIXO_PEDIDO)) {
+                executarEvento(
+                        cliente,
+                        atual,
+                        protocol.Protocolo.decodificar(
+                                linha.substring(protocol.Protocolo.PREFIXO_PEDIDO.length())));
+                return;
+            }
+            var pedido = ComandoChat.ler(linha);
+            if (pedido.isPresent() && pedido.get().nome().equals("/join")) {
+                if (pedido.get().argumentos().isBlank())
+                    throw new IllegalArgumentException(
+                            "Informe uma sala. Exemplos disponíveis: " + exemplosSalas());
+                trocarSala(cliente, pedido.get().argumentos());
+            } else if (pedido.isPresent() && pedido.get().nome().equals("/salas")) {
+                enviarSalas(cliente);
+                cliente.enviar(
+                        Evento.resposta(
+                                "Salas disponíveis",
+                                "Você está em " + atual.sala().nome() + ".\n\n" + textoSalas()));
+            } else if (pedido.isPresent() && pedido.get().nome().equals("/ia"))
+                perguntarIA(cliente, atual, pedido.get().argumentos());
+            else if (pedido.isPresent() && pedido.get().nome().equals("/perfil")) {
+                var p = pedido.get().argumentos().split("\\s+", 2);
+                if (p.length != 2)
+                    throw new IllegalArgumentException(
+                            "Use /perfil emoji apelido ou o botão Editar perfil.");
+                var novo = new model.Usuario(p[1], p[0]);
+                atual.chat().validarPerfil(cliente, novo);
+                var anterior = cliente.getUsuario();
+                cancelarConsulta(cliente);
+                atual.chat().digitando(cliente, false);
+                cliente.atualizarUsuario(novo);
+                atual.chat().perfilAlterado(cliente, anterior);
+            } else atual.comandos().executar(cliente, linha);
+        } finally {
+            var depois = atual.chat().ultimaPublicacao();
+            if (depois != antes && depois != null) notificarAtividade(atual, depois);
+        }
+    }
+
+    private void notificarAtividade(Conversa origem, model.Mensagem mensagem) {
+        for (var entrada : new ArrayList<>(participantes.entrySet()))
+            if (entrada.getValue() != origem) {
+                try {
+                    entrada.getKey()
+                            .enviar(
+                                    Evento.de(
+                                            Evento.Tipo.ATIVIDADE_SALA,
+                                            origem.sala().id(),
+                                            mensagem.id().toString(),
+                                            mensagem.remetente().nome()));
+                } catch (RuntimeException e) {
+                    desconectar(entrada.getKey());
+                    entrada.getKey().fechar();
+                }
+            }
+    }
+
+    private void executarEvento(ConexaoCliente cliente, Conversa conversa, Evento evento) {
+        try {
+            switch (evento.tipo()) {
+                case BUSCA_FILTROS -> {
+                    if (evento.campos().size() != 4)
+                        throw new IllegalArgumentException("Busca inválida.");
+                    conversa.chat()
+                            .buscar(
+                                    cliente,
+                                    new model.FiltroBusca(
+                                            evento.campo(0),
+                                            evento.campo(1),
+                                            evento.campo(2).isEmpty()
+                                                    ? null
+                                                    : java.time.LocalDate.parse(evento.campo(2)),
+                                            evento.campo(3).isEmpty()
+                                                    ? null
+                                                    : java.time.LocalDate.parse(evento.campo(3))));
+                }
+                case RESUMIR -> {
+                    if (evento.campos().size() != 2
+                            || !(evento.campo(0).equals("privado")
+                                    || evento.campo(0).equals("sala")))
+                        throw new IllegalArgumentException("Escolha resumo privado ou na sala.");
+                    var ids =
+                            java.util.Arrays.stream(evento.campo(1).split(",", -1))
+                                    .map(Long::valueOf)
+                                    .toList();
+                    agendarConsulta(
+                            cliente,
+                            conversa,
+                            conversa.chat().textoResumo(cliente, ids),
+                            "Resumo de " + ids.size() + " mensagens selecionadas",
+                            evento.campo(0));
+                }
+                case ARQUIVO_INICIO, ARQUIVO_PARTE, ARQUIVO_FIM, ARQUIVO_CANCELAR, ARQUIVO_PEDIR ->
+                        arquivos.processar(cliente, conversa.chat(), evento);
+                default -> throw new IllegalArgumentException("Pedido não permitido.");
+            }
+        } catch (RuntimeException e) {
+            String erro =
+                    e instanceof IllegalArgumentException
+                                    || e instanceof persistence.PersistenciaException
+                            ? e.getMessage()
+                            : "Não foi possível realizar a operação.";
+            if (evento.tipo() == Evento.Tipo.RESUMIR)
+                cliente.enviar(Evento.de(Evento.Tipo.IA_ERRO, erro));
+            else if (evento.tipo().name().startsWith("ARQUIVO"))
+                cliente.enviar(
+                        Evento.de(
+                                Evento.Tipo.ARQUIVO_ERRO,
+                                evento.campos().isEmpty() ? "" : evento.campo(0),
+                                erro));
+            else cliente.enviar(Evento.de(Evento.Tipo.ERRO, erro));
+        }
     }
 
     private void perguntarIA(ConexaoCliente cliente, Conversa conversa, String argumentos) {
@@ -165,34 +257,7 @@ public final class SalaService implements AutoCloseable {
             String pergunta = partes[1].strip(), alcance = partes[0].toLowerCase(Locale.ROOT);
             if (pergunta.isBlank() || pergunta.length() > 450)
                 throw new IllegalArgumentException("A pergunta deve ter de 1 a 450 caracteres.");
-            if (consultas.containsKey(cliente))
-                throw new IllegalArgumentException("Aguarde a resposta da sua pergunta anterior.");
-            long agora = System.nanoTime();
-            Long anterior = ultimaConsulta.get(cliente);
-            if (anterior != null
-                    && agora - anterior < java.util.concurrent.TimeUnit.SECONDS.toNanos(10))
-                throw new IllegalArgumentException(
-                        "Aguarde alguns segundos entre as perguntas à IA.");
-            Consulta consulta = new Consulta(conversa, pergunta, alcance);
-            consulta.tarefa =
-                    assistente.perguntar(
-                            pergunta,
-                            () -> {
-                                if (alcance.equals("sala"))
-                                    conversa.chat()
-                                            .enviarMensagem(cliente, "Pergunta à IA: " + pergunta);
-                                consulta.versao = conversa.chat().versaoHistorico();
-                                cliente.enviar(
-                                        Evento.de(
-                                                Evento.Tipo.IA_INICIO,
-                                                alcance,
-                                                conversa.sala().id(),
-                                                pergunta));
-                            },
-                            resposta -> concluirConsulta(cliente, consulta, resposta, null),
-                            erro -> concluirConsulta(cliente, consulta, null, erro));
-            consultas.put(cliente, consulta);
-            ultimaConsulta.put(cliente, agora);
+            agendarConsulta(cliente, conversa, pergunta, pergunta, alcance);
         } catch (RuntimeException e) {
             cliente.enviar(
                     Evento.de(
@@ -201,6 +266,41 @@ public final class SalaService implements AutoCloseable {
                                     ? e.getMessage()
                                     : "Não foi possível iniciar a consulta à IA."));
         }
+    }
+
+    private void agendarConsulta(
+            ConexaoCliente cliente,
+            Conversa conversa,
+            String prompt,
+            String pergunta,
+            String alcance) {
+        if (consultas.containsKey(cliente))
+            throw new IllegalArgumentException("Aguarde a resposta da sua pergunta anterior.");
+        long agora = System.nanoTime();
+        Long anterior = ultimaConsulta.get(cliente);
+        if (anterior != null
+                && agora - anterior < java.util.concurrent.TimeUnit.SECONDS.toNanos(10))
+            throw new IllegalArgumentException("Aguarde alguns segundos entre as perguntas à IA.");
+        Consulta consulta = new Consulta(conversa, pergunta, alcance);
+        consulta.tarefa =
+                assistente.perguntar(
+                        prompt,
+                        () -> {
+                            if (alcance.equals("sala"))
+                                conversa.chat()
+                                        .enviarMensagem(cliente, "Pergunta à IA: " + pergunta);
+                            consulta.versao = conversa.chat().versaoHistorico();
+                            cliente.enviar(
+                                    Evento.de(
+                                            Evento.Tipo.IA_INICIO,
+                                            alcance,
+                                            conversa.sala().id(),
+                                            pergunta));
+                        },
+                        resposta -> concluirConsulta(cliente, consulta, resposta, null),
+                        erro -> concluirConsulta(cliente, consulta, null, erro));
+        consultas.put(cliente, consulta);
+        ultimaConsulta.put(cliente, agora);
     }
 
     private synchronized void concluirConsulta(
@@ -216,8 +316,10 @@ public final class SalaService implements AutoCloseable {
             if (resposta == null || resposta.isBlank())
                 throw new IllegalArgumentException("A IA não retornou uma resposta.");
             if (resposta.length() > 8000) resposta = resposta.substring(0, 7990) + "\n[…]";
-            if (consulta.alcance.equals("sala"))
+            if (consulta.alcance.equals("sala")) {
                 consulta.conversa.chat().publicarRespostaIA(resposta, consulta.versao);
+                notificarAtividade(consulta.conversa, consulta.conversa.chat().ultimaPublicacao());
+            }
             cliente.enviar(
                     Evento.de(
                             Evento.Tipo.IA_RESPOSTA,
@@ -253,6 +355,7 @@ public final class SalaService implements AutoCloseable {
     public synchronized void close() {
         consultas.values().forEach(c -> assistente.cancelar(c.tarefa));
         consultas.clear();
+        arquivos.close();
         assistente.close();
     }
 

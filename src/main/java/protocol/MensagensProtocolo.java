@@ -23,7 +23,11 @@ public final class MensagensProtocolo {
                 mensagem.formato().name(),
                 citacao == null ? "" : Long.toString(citacao.id()),
                 citacao == null ? "" : citacao.autor(),
-                citacao == null ? "" : citacao.texto());
+                citacao == null ? "" : citacao.texto(),
+                mensagem.anexo() == null ? "" : mensagem.anexo().id(),
+                mensagem.anexo() == null ? "" : mensagem.anexo().nome(),
+                mensagem.anexo() == null ? "" : Long.toString(mensagem.anexo().tamanho()),
+                mensagem.anexo() == null ? "" : mensagem.anexo().tipo());
     }
 
     public static Mensagem ler(Evento evento) {
@@ -44,6 +48,13 @@ public final class MensagensProtocolo {
                 evento.campo(2),
                 LocalDateTime.parse(evento.campo(3)),
                 formato,
-                citacao);
+                citacao,
+                evento.campos().size() > 12 && !evento.campo(9).isEmpty()
+                        ? new model.Anexo(
+                                evento.campo(9),
+                                evento.campo(10),
+                                Long.parseLong(evento.campo(11)),
+                                evento.campo(12))
+                        : null);
     }
 }

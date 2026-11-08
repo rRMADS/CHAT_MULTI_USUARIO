@@ -25,13 +25,13 @@ final class PopupIA extends Dialog<Void> {
             Consumer<String> perguntar) {
         this.disponivel = disponivel;
         initOwner(janela);
-        setTitle("Conexo IA");
+        setTitle("Orkut IA");
         setResizable(true);
         DialogPane painel = getDialogPane();
         painel.getStylesheets().add(getClass().getResource("/client/chat.css").toExternalForm());
         temas.registrar(painel);
         painel.getButtonTypes().add(ButtonType.CLOSE);
-        Label titulo = new Label("Conexo IA");
+        Label titulo = new Label("Orkut IA");
         titulo.getStyleClass().add("chat-title");
         titulo.setGraphic(new EmojiAvatar(model.EmojiIdentificacao.ROBOT, 52));
         alcance.getItems().setAll("Privado · só você", "Na sala · " + sala);
@@ -131,7 +131,7 @@ final class PopupIA extends Dialog<Void> {
         enviar.setDisable(true);
         alcance.setDisable(true);
         pergunta.setDisable(true);
-        estado.setText("Conexo IA está preparando a resposta…");
+        estado.setText("Orkut IA está preparando a resposta…");
     }
 
     void respondeu(String texto, boolean erro) {

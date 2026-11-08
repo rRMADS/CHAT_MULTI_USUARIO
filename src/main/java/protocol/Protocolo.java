@@ -6,6 +6,8 @@ import java.util.Base64;
 import java.util.stream.Collectors;
 
 public final class Protocolo {
+    public static final String PREFIXO_PEDIDO = "!EVENTO\t";
+
     private Protocolo() {}
 
     public static String codificar(Evento evento) {

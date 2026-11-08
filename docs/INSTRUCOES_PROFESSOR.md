@@ -1,4 +1,4 @@
-# Como baixar e executar o Conexo
+# Como baixar e executar o Orkut 2.0
 
 ## Requisitos
 
@@ -84,3 +84,15 @@ O IP local só funciona em redes que tenham acesso entre si. Se houver bloqueio,
 | Cliente não conecta | Iniciar o servidor antes; conferir IP e porta |
 | Apelido já está em uso | Escolher um apelido diferente |
 | Arquivos/pasta .mvn não encontrados | Extrair novamente todo o ZIP, mantendo a estrutura de pastas |
+
+## Demonstração da versão Orkut 2.0
+
+- Digite um rascunho, troque de sala e volte para demonstrar a preservação local.
+- Envie uma mensagem de outro cliente enquanto o primeiro estiver em outra sala para mostrar o contador.
+- Use a carinha para inserir um emoji e demonstrar favoritos/recentes.
+- Com destinatário Todos, envie um arquivo de até 5 MB pelo clipe; no outro cliente, teste baixar e ver imagem.
+- Abra Filtros e combine autor, texto e datas.
+- Abra Avisos, junto ao perfil, para escolher categorias de notificação ou silenciar uma sala.
+- Com IA configurada, selecione mensagens públicas e use Resumir; confira a prévia e escolha privado ou sala.
+
+A configuração anterior da Groq continua compatível. Ao usar outro computador ou conta do Windows, execute ConfigurarIA.cmd nesse ambiente. Atualize servidor e clientes juntos.

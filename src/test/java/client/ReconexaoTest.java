@@ -112,4 +112,61 @@ class ReconexaoTest {
             }
         }
     }
+
+    @Test
+    void arquivoGrandeUsaFilaComEsperaERetornaBytesInteiros() throws Exception {
+        try (var s = servidor(0)) {
+            var fila = new LinkedBlockingQueue<Evento>();
+            try (var c = new ConexaoChat(fila::add, m -> {}, m -> {})) {
+                c.conectar("127.0.0.1", s.porta(), new Usuario("Ana"));
+                ate(fila, BEM_VINDO);
+                ate(fila, HISTORICO_FIM);
+                byte[] dados = new byte[1800000];
+                new Random(42).nextBytes(dados);
+                String id = UUID.randomUUID().toString();
+                assertTrue(
+                        c.enviarAguardando(
+                                Evento.de(
+                                        ARQUIVO_INICIO,
+                                        id,
+                                        "material.zip",
+                                        Integer.toString(dados.length),
+                                        "application/zip",
+                                        "1")));
+                for (int n = 0, pos = 0; pos < dados.length; pos += 768, n++)
+                    assertTrue(
+                            c.enviarAguardando(
+                                    Evento.de(
+                                            ARQUIVO_PARTE,
+                                            id,
+                                            Integer.toString(n),
+                                            Base64.getEncoder()
+                                                    .encodeToString(
+                                                            Arrays.copyOfRange(
+                                                                    dados,
+                                                                    pos,
+                                                                    Math.min(
+                                                                            dados.length,
+                                                                            pos + 768))))));
+                assertTrue(c.enviarAguardando(Evento.de(ARQUIVO_FIM, id)));
+                var mensagem = ate(fila, MENSAGEM);
+                String anexo = mensagem.campo(9);
+                ate(fila, ARQUIVO_PRONTO);
+                c.enviarEvento(Evento.de(ARQUIVO_PEDIR, anexo));
+                ate(fila, DOWNLOAD_INICIO);
+                var saida = new java.io.ByteArrayOutputStream();
+                long limite = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+                boolean fim = false;
+                while (System.nanoTime() < limite && !fim) {
+                    var e = fila.poll(1, TimeUnit.SECONDS);
+                    if (e == null) continue;
+                    if (e.tipo() == DOWNLOAD_PARTE)
+                        saida.writeBytes(Base64.getDecoder().decode(e.campo(2)));
+                    if (e.tipo() == DOWNLOAD_FIM) fim = true;
+                }
+                assertTrue(fim);
+                assertArrayEquals(dados, saida.toByteArray());
+            }
+        }
+    }
 }

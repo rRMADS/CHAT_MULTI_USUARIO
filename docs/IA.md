@@ -1,4 +1,4 @@
-# Conexo IA: ativação e uso
+# Orkut IA: ativação e uso
 
 A integração escolhida é a **Groq**, usando sua API compatível com OpenAI. O modelo padrão é `openai/gpt-oss-20b`, configurável pelo responsável pelo servidor. A escolha prioriza uma integração simples para este chat. Qwen é uma família de modelos; sua API oficial é fornecida pelo Alibaba Cloud Model Studio, com conta, chave e configuração próprias. O site qwen.ai não é uma chave de API para o programa.
 
@@ -21,7 +21,7 @@ A chave é guardada no arquivo local `.local/ia/groq-key.dpapi`, protegida pela 
 
 Para trocar a chave, execute `ConfigurarIA.cmd` novamente e reinicie o servidor. Para desativar a IA, coloque `ai.enabled=false` em `chat.properties` e reinicie. A configuração de modelo continua sendo `ai.model`, com padrão `openai/gpt-oss-20b`.
 
-O servidor exibirá **Conexo IA: Groq ativada** quando a configuração estiver habilitada e houver chave. Essa indicação confirma a configuração local; a primeira pergunta verifica se a Groq aceita a chave e o modelo.
+O servidor exibirá **Orkut IA: Groq ativada** quando a configuração estiver habilitada e houver chave. Essa indicação confirma a configuração local; a primeira pergunta verifica se a Groq aceita a chave e o modelo.
 
 ## Uso temporário pelo PowerShell
 
@@ -57,28 +57,37 @@ Também é possível digitar no campo de mensagens:
 /ia sala Sugira um roteiro para nossa apresentação
 ```
 
-Cada pergunta é independente. O servidor envia à Groq a pergunta e uma orientação fixa do assistente, **sem encaminhar automaticamente o histórico, os apelidos, os emojis ou a lista de participantes**. O serviço externo recebe e processa o texto enviado; o modo privado define a visibilidade dentro do chat, não significa execução local da IA. Consulte as [informações de dados da Groq](https://console.groq.com/docs/your-data).
+Cada pergunta comum é independente. O servidor envia à Groq a pergunta e uma orientação fixa, sem buscar automaticamente o histórico ou a lista de participantes. O recurso de resumo envia somente os textos das mensagens públicas escolhidas, acompanhados dos remetentes e horários visíveis; a prévia permite conferir o conteúdo e o alcance antes do envio. O serviço externo recebe e processa o texto enviado; o modo privado define a visibilidade dentro do chat, não significa execução local da IA. Consulte as [informações de dados da Groq](https://console.groq.com/docs/your-data).
 
-As respostas públicas aparecem como **Conexo IA**, com emoji de robô, em um único cartão de até 8.000 caracteres. Parágrafos, títulos, negrito, itálico, listas, citações, tabelas e blocos de código são formatados pelo cliente. Tabelas largas têm rolagem horizontal em janelas estreitas; blocos de código têm fonte própria e opção de cópia. A mesma apresentação é usada no modo privado e no popup. A IA não controla salas nem executa comandos.
+As respostas públicas aparecem como **Orkut IA**, com emoji de robô, em um único cartão de até 8.000 caracteres. Parágrafos, títulos, negrito, itálico, listas, citações, tabelas e blocos de código são formatados pelo cliente. Tabelas largas têm rolagem horizontal em janelas estreitas; blocos de código têm fonte própria e opção de cópia. A mesma apresentação é usada no modo privado e no popup. A IA não controla salas nem executa comandos.
 
 O botão **Copiar resposta** copia o texto original completo, incluindo a marcação Markdown, para uso em outros editores. O código pode ser copiado separadamente. HTML é tratado como texto e imagens remotas não são carregadas automaticamente.
 
 Ao instalar esta atualização, reinicie servidor e clientes. O servidor amplia automaticamente a coluna de conteúdo e adiciona o formato da mensagem no banco, preservando o histórico. Mensagens comuns continuam limitadas a uma linha e 500 caracteres. As respostas antigas que já haviam sido divididas e achatadas permanecem como foram salvas: as quebras de linha originais não podem ser reconstruídas com precisão. Faça uma nova pergunta para ver a apresentação corrigida.
 
+## Resumir mensagens escolhidas
+
+1. Na sala, marque **Selecionar** nos balões públicos que deseja resumir, até dez.
+2. Clique em **Resumir · quantidade** na barra superior.
+3. Confira a prévia. Cada texto longo é abreviado nos primeiros 1.000 caracteres; anexos não são lidos.
+4. Escolha **Privado · só você** ou **Na sala** e clique em **Gerar resumo**.
+
+O servidor verifica novamente os IDs e a sala de todas as mensagens. Pedidos com mensagens inexistentes, de outra sala ou repetidas são recusados. O resumo privado não é persistido nem transmitido aos outros participantes. No público, um aviso da solicitação e a resposta são salvos; o prompt completo com os trechos não é publicado como uma nova mensagem. O pedido compartilha a fila, os limites de consultas e o cancelamento da IA já existente.
+
 ## Limites e falhas
 
 - Uma pergunta pendente por conexão e intervalo mínimo de 10 segundos entre pedidos aceitos.
 - Duas consultas simultâneas no servidor e até seis consultas aceitas ao todo, incluindo as que aguardam.
-- Perguntas com até 450 caracteres; respostas limitadas a 8.000 caracteres e 2.048 tokens de conclusão solicitados à API.
+- Perguntas comuns com até 450 caracteres; resumos com até dez trechos de 1.000 caracteres; respostas limitadas a 8.000 caracteres e 2.048 tokens de conclusão solicitados à API.
 - Prazo de 25 segundos por requisição HTTP, com conexão de até 8 segundos e resposta de no máximo 128 KiB.
 - Sair ou trocar de sala cancela a consulta pendente. Se o histórico for limpo durante uma pergunta pública, a resposta atrasada não recria mensagens na sala.
 - Erros de autenticação, limite de uso, rede ou formato recebem avisos; a chave e o corpo bruto de erros da API não são exibidos aos clientes.
-- O apelido **Conexo IA** fica reservado ao assistente.
+- O apelido **Orkut IA** fica reservado ao assistente.
 
 A interface permanece utilizável enquanto a IA responde. Se o popup for fechado durante a consulta, a resposta privada ainda aparece em um cartão no chat; a resposta pública aparece na sala.
 
 ## Validação desta versão
 
-Os testes usam uma API HTTP local simulada e um assistente controlado, sem chave real e sem consumir a Groq. Verificam autenticação no cabeçalho, conteúdo enviado, resposta Unicode, limites, erros, sigilo entre participantes, persistência pública, concorrência, cancelamento e limpeza do histórico. A chamada ao serviço real ainda precisa ser validada com a chave do responsável pelo servidor.
+Os testes de IA usam uma API HTTP local simulada e um assistente controlado, sem chave real e sem consumir a Groq. Verificam autenticação no cabeçalho, conteúdo enviado, resposta Unicode, limites, erros, sigilo entre participantes, persistência pública, concorrência, cancelamento e limpeza do histórico. A chamada ao serviço real ainda precisa ser validada com a chave do responsável pelo servidor.
 
 Referências oficiais: [compatibilidade da API Groq](https://console.groq.com/docs/openai), [modelos](https://console.groq.com/docs/models), [limites](https://console.groq.com/docs/rate-limits) e [API Qwen no Alibaba Cloud](https://www.alibabacloud.com/help/en/model-studio/first-api-call-to-qwen).

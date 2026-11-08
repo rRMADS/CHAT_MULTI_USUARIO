@@ -3,7 +3,7 @@ $taskPastaProjeto = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'ChaveIA.ps1')
 $taskChaveDigitada = $null
 try {
-    Write-Host 'CONEXO | Configurar a IA neste computador' -ForegroundColor Magenta
+    Write-Host 'ORKUT 2.0 | Configurar a IA neste computador' -ForegroundColor Magenta
     Write-Host 'Cole sua chave da Groq abaixo. Ela ficara oculta e sera salva com a protecao da sua conta do Windows.'
     $taskChaveDigitada = Read-Host 'Chave da Groq' -AsSecureString
     Save-ConexoChaveIA -PastaProjeto $taskPastaProjeto -Chave $taskChaveDigitada

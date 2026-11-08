@@ -228,3 +228,11 @@
 .command-suggestions .list-view { -fx-background-color:-conexo-surface; -fx-border-width:0; }
 .command-suggestions .list-cell { -fx-background-color:-conexo-surface; -fx-text-fill:-conexo-text; -fx-padding:9 10; -fx-font-size:13px; }
 .command-suggestions .list-cell:filled:hover, .command-suggestions .list-cell:filled:selected { -fx-background-color:-conexo-own; }
+
+.emoji-message-choice { -fx-font-family:"Segoe UI Emoji"; -fx-font-size:26px; -fx-min-width:48; -fx-min-height:48; -fx-padding:4; -fx-background-color:-conexo-surface; -fx-border-color:-conexo-border; -fx-border-radius:9; }
+.emoji-message-choice:selected { -fx-background-color:-conexo-own; -fx-border-color:-conexo-accent; }
+.unread-divider { -fx-text-fill:-conexo-accent; -fx-font-weight:bold; -fx-font-size:12px; -fx-border-color:-conexo-border transparent -conexo-border transparent; -fx-padding:8; }
+.search-fragment { -fx-fill:-conexo-text; -fx-font-size:16px; }
+.search-match { -fx-background-color:-conexo-accent; -fx-text-fill:-conexo-button-text; -fx-font-size:16px; -fx-padding:0 2; -fx-background-radius:3; }
+
+.md-search-match { -fx-fill:-conexo-accent; -fx-font-weight:bold; }

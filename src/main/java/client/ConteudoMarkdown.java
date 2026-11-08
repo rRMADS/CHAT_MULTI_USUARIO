@@ -38,6 +38,11 @@ final class ConteudoMarkdown extends VBox {
         setAccessibleText(original);
     }
 
+    ConteudoMarkdown(String original, String termo) {
+        this(original);
+        TextoDestaque.markdown(this, termo);
+    }
+
     static Button copiar(String texto) {
         Button b = new Button("Copiar resposta");
         b.getStyleClass().add("command-help");

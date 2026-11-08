@@ -59,7 +59,7 @@ class IdentidadeTest {
                 IllegalArgumentException.class, () -> r.adicionar(new FakeConexao("ana", "fox")));
         assertThrows(
                 IllegalArgumentException.class,
-                () -> r.adicionar(new FakeConexao("Conexo IA", "robot")));
+                () -> r.adicionar(new FakeConexao("Orkut IA", "robot")));
     }
 
     @Test

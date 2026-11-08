@@ -1,4 +1,4 @@
-# Conexo
+# Orkut 2.0
 
 Chat multiusuário desktop em Java, com sockets TCP, histórico JDBC e interface JavaFX com AtlantaFX, ícones Ikonli e animações AnimateFX.
 
@@ -62,7 +62,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Histórico público salvo em `data/chat.mv.db`, recuperado ao conectar novamente.
 - Interface em português, bolhas de mensagem, horário, lista de participantes e avisos de entrada e saída.
 - Painel lateral à direita desde a tela inicial; no chat, reúne salas, participantes e controles da conexão.
-- Entrada por IP/host e porta; popup com apelido e emoji 3D obrigatório, 48 opções com busca e categorias, prévia com brilho e recusa de apelidos duplicados. O apelido Conexo IA é reservado ao assistente.
+- Entrada por IP/host e porta; popup com apelido e emoji 3D obrigatório, 48 opções com busca e categorias, prévia com brilho e recusa de apelidos duplicados. O apelido Orkut IA é reservado ao assistente.
 - Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
 - Busca no histórico público e recuperação das últimas mensagens, com leitura em lote de citações e reações para reduzir o trabalho no servidor.
@@ -85,7 +85,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Moldura integrada às cores do aplicativo, com botões de minimizar, maximizar/restaurar e fechar, arraste pela barra superior e redimensionamento pelas bordas e cantos. Duplo clique na barra maximiza ou restaura.
 - Maximizar e restaurar usam o comportamento nativo do Windows, com um acabamento discreto no conteúdo após o layout estabilizar. Minimizar aplica um deslize curto com desaparecimento gradual em 240 ms; o retorno dura 300 ms. Na janela maximizada, apenas a opacidade é animada. As transições não alteram largura ou altura e são interrompidas ao fechar.
 - Janela sem o limite mínimo anterior de 1040 × 760. Em tamanhos menores, os campos se reorganizam e o painel lateral abre pelo botão Salas; clique fora ou pressione Esc para fechá-lo. Em dimensões muito pequenas, a rolagem mantém os controles acessíveis.
-- Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor. Configure a chave uma vez por **ConfigurarIA.cmd** para que seja lembrada ao abrir **Servidor.cmd** pelo Explorador.
+- Orkut IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor. Configure a chave uma vez por **ConfigurarIA.cmd** para que seja lembrada ao abrir **Servidor.cmd** pelo Explorador.
 - Respostas da IA em um único cartão, com parágrafos, títulos, negrito, listas, tabelas e código formatados; botão para copiar a resposta completa. O formato também é preservado no histórico público.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
 - Heartbeat e recuperação automática da conexão e do histórico público após queda.
@@ -93,13 +93,25 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 
 Privadas não ficam no banco e desaparecem ao sair, trocar de sala, reconectar ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre na respectiva sala deste servidor. As salas são públicas e não têm senha.
 
-## Conexo IA
+## Novidades do Orkut 2.0
 
-O botão **IA**, ao lado de Histórico, abre o assistente com as opções **Privado · só você** e **Na sala**. No modo sala, pergunta e resposta são públicas e salvas; no privado, são enviadas somente ao solicitante e não ficam no banco do chat. Nenhum modo encaminha automaticamente o histórico da conversa ao provedor.
+- **Rascunhos por sala:** troque de sala e volte para recuperar texto, destinatário, cursor e citação. Os rascunhos ficam apenas na memória desta sessão e são descartados ao sair ou fechar o programa.
+- **Mensagens não lidas:** a lista de salas mostra contadores locais de novas mensagens. A faixa **Você parou de ler aqui** indica onde retomar. A contagem acompanha os eventos recebidos e mensagens carregadas após leituras conhecidas; não é um recibo de leitura dos outros participantes.
+- **Emojis nas mensagens:** use o botão de carinha, pesquise, filtre por categoria e marque favoritos. Os últimos 16 emojis inseridos ficam em **Recentes**. Favoritos, recentes e tema são lembrados neste computador.
+- **Imagens e arquivos:** use o clipe com o destinatário **Todos**. Cada arquivo pode ter até **5 MB**. Há progresso e cancelamento, download com escolha do destino e prévia de imagens. Arquivos são públicos na sala e persistem no banco junto ao histórico. Formatos: PNG, JPG/JPEG, GIF, PDF, TXT, CSV, JAVA, DOCX, XLSX, PPTX e ZIP. O programa não executa nem descompacta arquivos.
+- **Busca com filtros:** o botão **Filtros** combina palavra, participante (inclusive apelidos antigos) e datas inicial/final. O último dia é incluído. Os resultados destacam o trecho procurado, inclusive nas respostas da IA. **Histórico** retorna à conversa normal.
+- **Avisos configuráveis:** abra **Avisos** abaixo do seu perfil. Escolha todas as mensagens, apenas menções e privadas, ou silencioso; também pode silenciar salas específicas. Os avisos do Windows em segundo plano são opcionais e dependem das configurações do sistema. Os contadores continuam disponíveis nas salas silenciadas.
+- **Resumo com IA:** marque **Selecionar** em até dez mensagens públicas e clique em **Resumir**. Confira a prévia e escolha resposta privada ou na sala. Somente os textos selecionados (até 1.000 caracteres de cada mensagem), com identificação e horário, são enviados à Groq. O conteúdo dos arquivos anexados não é enviado nem lido.
+
+Atualize e reinicie **servidor e clientes juntos**. O banco adiciona as estruturas de anexos automaticamente, preservando o histórico existente. Mensagens antigas da Conexo IA continuam legíveis e mantêm o nome original; as novas respostas usam **Orkut IA**. A chave da Groq continua sendo configurada por **ConfigurarIA.cmd** e não precisa ser compartilhada com os participantes.
+
+## Orkut IA
+
+O botão **IA**, ao lado de Histórico, abre o assistente com as opções **Privado · só você** e **Na sala**. No modo sala, pergunta e resposta são públicas e salvas; no privado, são enviadas somente ao solicitante e não ficam no banco do chat. Perguntas comuns não encaminham o histórico ao provedor. O resumo envia apenas as mensagens selecionadas e confirmadas pelo usuário.
 
 A integração usa Groq e vem desativada. Abra **ConfigurarIA.cmd** uma vez no computador servidor, cole sua chave na solicitação oculta e aguarde a conclusão. Depois abra **Servidor.cmd** normalmente pelo Explorador; a chave será carregada automaticamente nas próximas execuções. O servidor precisa de internet; participantes não precisam de chave. Sem chave, o chat continua funcionando e o assistente informa que ainda não foi ativado. Siga o [guia de ativação da IA](docs/IA.md), que também explica os limites, o modelo e como testar. Não coloque a chave nos fontes, no chat ou no GitHub.
 
-Atualize e reinicie **servidor e clientes juntos**: o protocolo inclui identificação com emoji, sessão de reconexão, citações, reações, menções e avisos. O banco é atualizado automaticamente, preservando mensagens antigas.
+Atualize e reinicie **servidor e clientes juntos**: o protocolo inclui identificação com emoji, sessão de reconexão, citações, reações, menções, atividade das salas, anexos e resumos selecionados. O banco é atualizado automaticamente, preservando mensagens antigas.
 
 ## Comandos
 
@@ -169,9 +181,9 @@ Pontos de entrada: `server.Servidor` e `client.Launcher`. Pelo terminal, use `mv
 
 ### Bibliotecas visuais
 
-| Biblioteca | Versão | Aplicação no Conexo |
+| Biblioteca | Versão | Aplicação no Orkut 2.0 |
 | --- | --- | --- |
-| [AtlantaFX](https://github.com/mkpaz/atlantafx) | 2.0.1 | Primer Light e Primer Dark, com os temas Roxo, Claro e Escuro do Conexo |
+| [AtlantaFX](https://github.com/mkpaz/atlantafx) | 2.0.1 | Primer Light e Primer Dark, com os temas Roxo, Claro e Escuro do Orkut 2.0 |
 | [Ikonli](https://github.com/kordamp/ikonli) + Feather | 12.4.0 | Ícones vetoriais nos controles e nas mensagens |
 | [AnimateFX](https://github.com/Typhon0/AnimateFX) | 1.3.0 | Fade de componentes e entrada de telas |
 
@@ -195,4 +207,4 @@ Os scripts do Maven Wrapper são do projeto Apache Maven Wrapper e têm licença
 - [Arquitetura e concorrência](docs/ARQUITETURA.md)
 - [Instruções para o professor](docs/INSTRUCOES_PROFESSOR.md)
 - [Configuração da IA](docs/IA.md)
-- [Fluxograma em PDF](docs/Fluxograma_Conexo_Chat_Multiusuario.pdf)
+- [Fluxograma em PDF (visão inicial do projeto)](docs/Fluxograma_Conexo_Chat_Multiusuario.pdf)

@@ -144,7 +144,7 @@ class InteracoesTest {
         for (String cmd :
                 List.of(
                         "/perfil cat Bruno",
-                        "/perfil cat Conexo IA",
+                        "/perfil cat Orkut IA",
                         "/perfil inexistente Ana",
                         "/perfil cat @na"))
             assertThrows(IllegalArgumentException.class, () -> salas.executar(ana, cmd));

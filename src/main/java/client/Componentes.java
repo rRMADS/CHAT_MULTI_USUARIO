@@ -35,7 +35,7 @@ final class Componentes {
     }
 
     static Label marca() {
-        Label marca = label("conexo", "brand");
+        Label marca = label("Orkut 2.0", "brand");
         marca.setGraphic(Icones.criar(Feather.MESSAGE_CIRCLE, 30));
         marca.setGraphicTextGap(12);
         return marca;

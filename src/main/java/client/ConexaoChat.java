@@ -184,6 +184,24 @@ public final class ConexaoChat implements AutoCloseable {
         if (!atual.saida.offer(texto)) atual.close();
     }
 
+    public void enviarEvento(Evento evento) {
+        enviar(Protocolo.PREFIXO_PEDIDO + Protocolo.codificar(evento));
+    }
+
+    public boolean enviarAguardando(Evento evento) {
+        String texto = Protocolo.PREFIXO_PEDIDO + Protocolo.codificar(evento);
+        if (texto.length() > LeitorLinhas.LIMITE_REQUISICAO)
+            throw new IllegalArgumentException("Bloco de arquivo excessivo.");
+        Canal atual = canal;
+        if (fechada.get() || !pronta || atual == null) return false;
+        try {
+            return atual.saida.offer(texto, 5, TimeUnit.SECONDS) && canal == atual && pronta;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
     private void terminar(String motivo) {
         if (!fechada.compareAndSet(false, true)) return;
         pronta = false;

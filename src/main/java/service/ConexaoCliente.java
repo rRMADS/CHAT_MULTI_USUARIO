@@ -21,5 +21,9 @@ public interface ConexaoCliente {
 
     void enviar(Evento evento);
 
+    default void enviarComEspera(Evento evento) {
+        enviar(evento);
+    }
+
     void fechar();
 }

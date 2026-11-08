@@ -21,3 +21,10 @@ CREATE TABLE IF NOT EXISTS reacao (
 );
 CREATE INDEX IF NOT EXISTS idx_mensagem_horario ON mensagem(horario);
 CREATE INDEX IF NOT EXISTS idx_mensagem_sala_id ON mensagem(sala, id);
+
+CREATE TABLE IF NOT EXISTS anexo (
+ id VARCHAR(36) PRIMARY KEY, sala VARCHAR(30) NOT NULL, nome VARCHAR(120) NOT NULL,
+ tamanho BIGINT NOT NULL, tipo VARCHAR(100) NOT NULL, dados BLOB NOT NULL
+);
+ALTER TABLE mensagem ADD COLUMN IF NOT EXISTS anexo_id VARCHAR(36);
+CREATE INDEX IF NOT EXISTS idx_anexo_sala ON anexo(sala);

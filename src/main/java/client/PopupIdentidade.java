@@ -30,7 +30,7 @@ final class PopupIdentidade extends Dialog<Usuario> {
 
     PopupIdentidade(Window janela, Temas temas, String nome) {
         initOwner(janela);
-        setTitle("Sua identidade no Conexo");
+        setTitle("Sua identidade no Orkut 2.0");
         setResizable(true);
         DialogPane painel = getDialogPane();
         painel.getStylesheets().add(getClass().getResource("/client/chat.css").toExternalForm());

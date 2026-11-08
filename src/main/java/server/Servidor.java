@@ -122,11 +122,11 @@ public final class Servidor implements AutoCloseable {
                         new SalaService(conversas, configIA.criar()));
         System.out.println(
                 configIA.disponivel()
-                        ? "Conexo IA: Groq ativada (perguntas privadas ou na sala)."
-                        : "Conexo IA: desativada. O chat funciona normalmente. Consulte docs/IA.md para ativar.");
+                        ? "Orkut IA: Groq ativada (perguntas privadas ou na sala)."
+                        : "Orkut IA: desativada. O chat funciona normalmente. Consulte docs/IA.md para ativar.");
         Runtime.getRuntime().addShutdownHook(new Thread(servidor::close));
         servidor.iniciar();
-        System.out.println("CONEXO | Servidor ativo na porta " + servidor.porta());
+        System.out.println("ORKUT 2.0 | Servidor ativo na porta " + servidor.porta());
         System.out.println(
                 "Salas abertas: "
                         + config.salas().stream()

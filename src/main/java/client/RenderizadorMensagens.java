@@ -22,6 +22,16 @@ final class RenderizadorMensagens {
     private final Supplier<String> apelidoAtual;
     private final RecursosConversa recursos;
     private final Animacoes animacoes;
+    private String termoBusca = "";
+    private java.util.function.Function<model.Anexo, Node> anexos = a -> new Label(a.nome());
+
+    void destacarBusca(String termo) {
+        termoBusca = termo == null ? "" : termo;
+    }
+
+    void anexos(java.util.function.Function<model.Anexo, Node> renderizar) {
+        anexos = renderizar;
+    }
 
     RenderizadorMensagens(
             ReadOnlyDoubleProperty larguraConversa,
@@ -49,15 +59,13 @@ final class RenderizadorMensagens {
         HBox cabecalho = new HBox(10, autor, meta);
         cabecalho.setAlignment(Pos.CENTER_LEFT);
         Node corpo;
-        if (formatada) corpo = new ConteudoMarkdown(conteudo);
+        if (formatada)
+            corpo = new ConteudoMarkdown(conteudo, privadoPara == null ? termoBusca : "");
         else {
-            Label textoCorpo = label(conteudo, "message-body");
-            textoCorpo.setWrapText(true);
-            textoCorpo.setMinWidth(0);
-            textoCorpo.setMaxWidth(580);
-            corpo = textoCorpo;
+            corpo = TextoDestaque.criar(conteudo, privadoPara == null ? termoBusca : "");
         }
         VBox bolha = new VBox(8, cabecalho, corpo);
+        if (mensagem.anexo() != null) bolha.getChildren().add(anexos.apply(mensagem.anexo()));
         if (citacao != null) bolha.getChildren().add(1, recursos.citacao(citacao));
         if (!minha && privadoPara == null && Mencoes.contem(conteudo, apelido)) {
             bolha.getStyleClass().add("mention-me");
@@ -125,7 +133,7 @@ final class RenderizadorMensagens {
     }
 
     Node respostaIA(String pergunta, String resposta) {
-        Label cabecalho = label("Conexo IA · privado", "command-title");
+        Label cabecalho = label("Orkut IA · privado", "command-title");
         cabecalho.setGraphic(new EmojiAvatar(EmojiIdentificacao.ROBOT, 36));
         Label pedido = label("Você: " + pergunta, "muted");
         pedido.setWrapText(true);

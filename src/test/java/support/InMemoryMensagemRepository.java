@@ -64,6 +64,7 @@ public class InMemoryMensagemRepository implements MensagemRepository {
     public synchronized int limpar() {
         int quantidade = mensagens.size();
         mensagens.clear();
+        anexos.clear();
         reacoes.clear();
         fixadas.clear();
         return quantidade;
@@ -84,5 +85,24 @@ public class InMemoryMensagemRepository implements MensagemRepository {
                                         .contains(texto.toLowerCase(Locale.ROOT)))
                         .toList();
         return filtradas.subList(Math.max(0, filtradas.size() - n), filtradas.size());
+    }
+
+    @Override
+    public synchronized List<Mensagem> buscar(model.FiltroBusca filtro, int quantidade) {
+        var filtradas = mensagens.stream().filter(filtro::corresponde).toList();
+        return filtradas.subList(Math.max(0, filtradas.size() - quantidade), filtradas.size());
+    }
+
+    private final java.util.Map<String, byte[]> anexos = new java.util.HashMap<>();
+
+    @Override
+    public synchronized Mensagem salvarAnexo(Mensagem m, byte[] dados) {
+        anexos.put(m.anexo().id(), dados.clone());
+        return salvar(m);
+    }
+
+    @Override
+    public synchronized java.util.Optional<byte[]> lerAnexo(String id) {
+        return java.util.Optional.ofNullable(anexos.get(id)).map(byte[]::clone);
     }
 }

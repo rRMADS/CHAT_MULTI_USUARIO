@@ -25,6 +25,13 @@ final class RecursosConversa {
     private final LongConsumer localizar;
     private final Window janela;
     private final Temas temas;
+
+    record Selecionada(long id, String autor, String texto) {}
+
+    private final Map<Long, Selecionada> selecionadas = new LinkedHashMap<>();
+    private java.util.function.Consumer<java.util.List<Selecionada>> aoResumir = s -> {};
+    private boolean iaDisponivel;
+    final Button resumir = new Button("Resumir · 0");
     private Citacao resposta;
     private Dialog<Void> popup;
     final VBox citacaoEnvio = new VBox(6);
@@ -43,6 +50,13 @@ final class RecursosConversa {
         this.localizar = localizar;
         citacaoEnvio.setId("citacao-envio");
         cancelarResposta();
+        resumir.getStyleClass().add("secondary");
+        resumir.setId("resumir-selecionadas");
+        resumir.setTooltip(
+                new Tooltip(
+                        "Selecione até 10 mensagens e confira os trechos antes de pedir o resumo à IA."));
+        resumir.setDisable(true);
+        resumir.setOnAction(e -> aoResumir.accept(List.copyOf(selecionadas.values())));
         avisos.getStyleClass().add("secondary");
         avisos.setId("mensagens-fixadas");
         avisos.setTooltip(new Tooltip("Avisos e mensagens fixadas desta sala"));
@@ -105,7 +119,21 @@ final class RecursosConversa {
         fixar.getStyleClass().add("message-action");
         fixar.setOnAction(
                 e -> enviar.accept((fixadas.containsKey(id) ? "/desfixar " : "/fixar ") + id));
-        FlowPane acoes = new FlowPane(6, 4, responder, reagir, fixar);
+        CheckBox selecionar = new CheckBox("Selecionar");
+        selecionar.getStyleClass().add("message-action");
+        selecionar.setTooltip(new Tooltip("Selecione até 10 mensagens para resumir."));
+        selecionar.setAccessibleText("Selecionar mensagem #" + id + " para resumo");
+        selecionar.setOnAction(e -> {
+            if (selecionar.isSelected()) {
+                if (selecionadas.size() >= 10) {
+                    selecionar.setSelected(false);
+                    return;
+                }
+                selecionadas.put(id, new Selecionada(id, autor, texto));
+            } else selecionadas.remove(id);
+            atualizarSelecao();
+        });
+        FlowPane acoes = new FlowPane(6, 4, responder, reagir, fixar, selecionar);
         acoes.setAlignment(Pos.CENTER_LEFT);
         FlowPane reacoes = new FlowPane(6, 4);
         reacoes.setVisible(false);
@@ -118,10 +146,28 @@ final class RecursosConversa {
 
     void esquecer(long id) {
         cartoes.remove(id);
+        selecionadas.remove(id);
+        atualizarSelecao();
     }
 
     void limparCartoes() {
         cartoes.clear();
+        selecionadas.clear();
+        atualizarSelecao();
+    }
+
+    void aoResumir(java.util.function.Consumer<List<Selecionada>> acao) {
+        aoResumir = acao;
+    }
+
+    void disponibilidadeIA(boolean disponivel) {
+        iaDisponivel = disponivel;
+        atualizarSelecao();
+    }
+
+    private void atualizarSelecao() {
+        resumir.setText("Resumir · " + selecionadas.size());
+        resumir.setDisable(!iaDisponivel || selecionadas.isEmpty());
     }
 
     void reacoes(Evento evento) {

@@ -26,10 +26,12 @@ public final class JdbcMensagemRepository implements MensagemRepository {
             """
             SELECT m.*, original.id AS citacao_id,
                    original.remetente AS citacao_autor,
-                   original.conteudo AS citacao_texto
+                   original.conteudo AS citacao_texto,
+                   a.nome AS anexo_nome, a.tamanho AS anexo_tamanho, a.tipo AS anexo_tipo
             FROM mensagem m
             LEFT JOIN mensagem original
                 ON original.id = m.resposta_id AND original.sala = m.sala
+            LEFT JOIN anexo a ON a.id=m.anexo_id AND a.sala=m.sala
             """;
     private final ConnectionFactory factory;
     private final Sala sala;
@@ -57,27 +59,76 @@ public final class JdbcMensagemRepository implements MensagemRepository {
     }
 
     @Override
-    public Mensagem salvar(Mensagem mensagem) {
-        try (var c = factory.abrir();
-                var s =
+    public Mensagem salvar(Mensagem m) {
+        if (m.anexo() != null) throw new IllegalArgumentException("Use o envio de anexos.");
+        return salvarInterno(m, null);
+    }
+
+    @Override
+    public Mensagem salvarAnexo(Mensagem m, byte[] dados) {
+        if (m.anexo() == null || dados == null || dados.length != m.anexo().tamanho())
+            throw new IllegalArgumentException("Arquivo incompleto.");
+        return salvarInterno(m, dados);
+    }
+
+    private Mensagem salvarInterno(Mensagem m, byte[] dados) {
+        try (var c = factory.abrir()) {
+            c.setAutoCommit(false);
+            try {
+                if (dados != null)
+                    try (var q =
+                            c.prepareStatement(
+                                    "INSERT INTO anexo(id,sala,nome,tamanho,tipo,dados) VALUES(?,?,?,?,?,?)")) {
+                        q.setString(1, m.anexo().id());
+                        q.setString(2, sala.id());
+                        q.setString(3, m.anexo().nome());
+                        q.setLong(4, dados.length);
+                        q.setString(5, m.anexo().tipo());
+                        q.setBytes(6, dados);
+                        q.executeUpdate();
+                    }
+                Mensagem salva;
+                try (var q =
                         c.prepareStatement(
-                                "INSERT INTO mensagem(remetente, conteudo, horario, sala, emoji, formato, resposta_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                "INSERT INTO mensagem(remetente,conteudo,horario,sala,emoji,formato,resposta_id,anexo_id) VALUES(?,?,?,?,?,?,?,?)",
                                 Statement.RETURN_GENERATED_KEYS)) {
-            s.setString(1, mensagem.remetente().nome());
-            s.setString(2, mensagem.conteudo());
-            s.setTimestamp(3, Timestamp.valueOf(mensagem.horario()));
-            s.setString(4, sala.id());
-            s.setString(5, mensagem.remetente().emoji().id());
-            s.setString(6, mensagem.formato().name());
-            if (mensagem.citacao() == null) s.setNull(7, Types.BIGINT);
-            else s.setLong(7, mensagem.citacao().id());
-            s.executeUpdate();
-            try (var keys = s.getGeneratedKeys()) {
-                if (!keys.next()) throw new SQLException("ID não retornado");
-                return mensagem.comId(keys.getLong(1));
+                    q.setString(1, m.remetente().nome());
+                    q.setString(2, m.conteudo());
+                    q.setTimestamp(3, Timestamp.valueOf(m.horario()));
+                    q.setString(4, sala.id());
+                    q.setString(5, m.remetente().emoji().id());
+                    q.setString(6, m.formato().name());
+                    if (m.citacao() == null) q.setNull(7, Types.BIGINT);
+                    else q.setLong(7, m.citacao().id());
+                    q.setString(8, m.anexo() == null ? null : m.anexo().id());
+                    q.executeUpdate();
+                    try (var keys = q.getGeneratedKeys()) {
+                        if (!keys.next()) throw new SQLException("ID não retornado");
+                        salva = m.comId(keys.getLong(1));
+                    }
+                }
+                c.commit();
+                return salva;
+            } catch (SQLException | RuntimeException e) {
+                c.rollback();
+                throw e;
             }
         } catch (SQLException e) {
             throw new PersistenciaException("Mensagem não salva. Tente novamente.", e);
+        }
+    }
+
+    @Override
+    public java.util.Optional<byte[]> lerAnexo(String id) {
+        try (var c = factory.abrir();
+                var q = c.prepareStatement("SELECT dados FROM anexo WHERE id=? AND sala=?")) {
+            q.setString(1, id);
+            q.setString(2, sala.id());
+            try (var r = q.executeQuery()) {
+                return r.next() ? java.util.Optional.of(r.getBytes(1)) : java.util.Optional.empty();
+            }
+        } catch (SQLException e) {
+            throw new PersistenciaException("Não foi possível carregar o arquivo.", e);
         }
     }
 
@@ -93,14 +144,26 @@ public final class JdbcMensagemRepository implements MensagemRepository {
 
     @Override
     public int limpar() {
-        try (var c = factory.abrir();
-                var s = c.prepareStatement("DELETE FROM mensagem WHERE sala = ?")) {
-            s.setString(1, sala.id());
-            return s.executeUpdate();
+        try (var c = factory.abrir()) {
+            c.setAutoCommit(false);
+            try {
+                int quantidade;
+                try (var q = c.prepareStatement("DELETE FROM mensagem WHERE sala=?")) {
+                    q.setString(1, sala.id());
+                    quantidade = q.executeUpdate();
+                }
+                try (var q = c.prepareStatement("DELETE FROM anexo WHERE sala=?")) {
+                    q.setString(1, sala.id());
+                    q.executeUpdate();
+                }
+                c.commit();
+                return quantidade;
+            } catch (SQLException e) {
+                c.rollback();
+                throw e;
+            }
         } catch (SQLException e) {
-            throw new PersistenciaException(
-                    "Não foi possível confirmar a limpeza. Recarregue o histórico antes de tentar novamente.",
-                    e);
+            throw new PersistenciaException("Não foi possível confirmar a limpeza.", e);
         }
     }
 
@@ -119,7 +182,14 @@ public final class JdbcMensagemRepository implements MensagemRepository {
                 r.getString("conteudo"),
                 r.getTimestamp("horario").toLocalDateTime(),
                 model.FormatoMensagem.valueOf(r.getString("formato")),
-                citacao);
+                citacao,
+                r.getString("anexo_nome") == null
+                        ? null
+                        : new model.Anexo(
+                                r.getString("anexo_id"),
+                                r.getString("anexo_nome"),
+                                r.getLong("anexo_tamanho"),
+                                r.getString("anexo_tipo")));
     }
 
     @Override
@@ -246,23 +316,33 @@ public final class JdbcMensagemRepository implements MensagemRepository {
     }
 
     private List<Mensagem> consultar(String texto, int quantidade) {
+        return buscar(new model.FiltroBusca(texto, "", null, null), quantidade);
+    }
+
+    @Override
+    public List<Mensagem> buscar(model.FiltroBusca filtro, int quantidade) {
         if (quantidade < 1 || quantidade > 200)
             throw new IllegalArgumentException("Histórico: escolha de 1 a 200 mensagens.");
-        // LOCATE trata %, _ e aspas como texto literal, sem interpolação de SQL.
-        String sql =
-                texto == null
-                        ? SELECAO + "WHERE m.sala = ? ORDER BY m.id DESC LIMIT ?"
-                        : SELECAO
-                                + "WHERE m.sala = ? AND LOCATE(LOWER(?), LOWER(m.conteudo)) > 0 ORDER BY m.id DESC LIMIT ?";
+        String sql = SELECAO + "WHERE m.sala=?";
+        if (!filtro.texto().isEmpty()) sql += " AND LOCATE(LOWER(?),LOWER(m.conteudo))>0";
+        if (!filtro.autor().isEmpty()) sql += " AND LOWER(m.remetente)=LOWER(?)";
+        if (filtro.inicio() != null) sql += " AND m.horario>=?";
+        if (filtro.fim() != null) sql += " AND m.horario<?";
+        sql += " ORDER BY m.id DESC LIMIT ?";
         try (var c = factory.abrir();
-                var s = c.prepareStatement(sql)) {
-            s.setString(1, sala.id());
-            int index = 2;
-            if (texto != null) s.setString(index++, texto);
-            s.setInt(index, quantidade);
-            try (var rows = s.executeQuery()) {
-                List<Mensagem> mensagens = new ArrayList<>();
-                while (rows.next()) mensagens.add(ler(rows));
+                var q = c.prepareStatement(sql)) {
+            int i = 1;
+            q.setString(i++, sala.id());
+            if (!filtro.texto().isEmpty()) q.setString(i++, filtro.texto());
+            if (!filtro.autor().isEmpty()) q.setString(i++, filtro.autor());
+            if (filtro.inicio() != null)
+                q.setTimestamp(i++, Timestamp.valueOf(filtro.inicio().atStartOfDay()));
+            if (filtro.fim() != null)
+                q.setTimestamp(i++, Timestamp.valueOf(filtro.fim().plusDays(1).atStartOfDay()));
+            q.setInt(i, quantidade);
+            try (var r = q.executeQuery()) {
+                var mensagens = new ArrayList<Mensagem>();
+                while (r.next()) mensagens.add(ler(r));
                 Collections.reverse(mensagens);
                 return List.copyOf(mensagens);
             }

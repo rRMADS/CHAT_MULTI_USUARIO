@@ -116,6 +116,17 @@ public final class ClienteHandler implements Runnable, ConexaoCliente {
         }
     }
 
+    @Override
+    public void enviarComEspera(Evento evento) {
+        try {
+            if (!ativo || !saida.offer(evento, 3, TimeUnit.SECONDS))
+                throw new IllegalStateException("Transferência interrompida.");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Transferência cancelada.");
+        }
+    }
+
     private void escrever() {
         try (var writer =
                 new BufferedWriter(

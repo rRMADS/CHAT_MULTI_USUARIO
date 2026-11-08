@@ -302,4 +302,28 @@ class JdbcMensagemRepositoryIntegrationTest {
             }
         }
     }
+
+    @Test
+    void blobSobreviveAReaberturaEInsercaoDuplicadaFazRollback() {
+        String url = "jdbc:h2:" + pasta.resolve("arquivo").toAbsolutePath();
+        var r = criar(url);
+        byte[] dados = "Aula".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var anexo = new Anexo(UUID.randomUUID().toString(), "aula.txt", dados.length, "text/plain");
+        var m =
+                new Mensagem(
+                        null,
+                        new Usuario("Ana"),
+                        "Arquivo da aula",
+                        LocalDateTime.now(),
+                        FormatoMensagem.TEXTO,
+                        null,
+                        anexo);
+        r.salvarAnexo(m, dados);
+        var aberto = criar(url);
+        assertArrayEquals(dados, aberto.lerAnexo(anexo.id()).orElseThrow());
+        assertEquals(anexo, aberto.buscarUltimas(1).get(0).anexo());
+        assertThrows(PersistenciaException.class, () -> aberto.salvarAnexo(m, dados));
+        assertEquals(1, aberto.buscarUltimas(10).size());
+        assertArrayEquals(dados, aberto.lerAnexo(anexo.id()).orElseThrow());
+    }
 }

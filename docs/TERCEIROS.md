@@ -1,6 +1,6 @@
 # Bibliotecas e créditos visuais
 
-O Conexo usa dependências públicas obtidas pelo Maven. Não é necessário copiar repositórios completos nem enviar os arquivos JAR junto com os fontes. Os nomes e avisos de licença dos autores devem acompanhar qualquer futura distribuição que inclua essas bibliotecas.
+O Orkut 2.0 usa dependências públicas obtidas pelo Maven. Não é necessário copiar repositórios completos nem enviar os arquivos JAR junto com os fontes. Os nomes e avisos de licença dos autores devem acompanhar qualquer futura distribuição que inclua essas bibliotecas.
 
 | Componente | Versão utilizada | Autoria / licença | Origem |
 | --- | --- | --- | --- |
@@ -14,6 +14,6 @@ O Conexo usa dependências públicas obtidas pelo Maven. Não é necessário cop
 
 Os emojis 3D são distribuídos como recursos locais em `src/main/resources/client/emojis`, acompanhados da licença MIT original da Microsoft. A marca Fluent e as demais marcas continuam pertencendo aos respectivos titulares.
 
-Os temas Primer Light e Primer Dark são carregados pela API do AtlantaFX. As cores e os componentes específicos do Conexo estão em `src/main/resources/client/chat.css`. Os ícones são instanciados por `client.Icones`; as transições são coordenadas por `client.Animacoes`.
+Os temas Primer Light e Primer Dark são carregados pela API do AtlantaFX. As cores e os componentes específicos do Orkut 2.0 estão em `src/main/resources/client/chat.css`. Os ícones são instanciados por `client.Icones`; as transições são coordenadas por `client.Animacoes`.
 
 O ícone animado de envio representa o pedido feito pelo cliente. A indicação **Salva no servidor** aparece na mensagem pública recebida de volta após a persistência pelo servidor. Nenhum desses efeitos representa confirmação de leitura ou presença de uma pessoa fora da sala.

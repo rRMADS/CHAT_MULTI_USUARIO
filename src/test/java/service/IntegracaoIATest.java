@@ -95,7 +95,7 @@ class IntegracaoIATest {
             assertEquals("MARKDOWN_IA", eventos(c.bruno, MENSAGEM).get(1).campo(5));
             assertEquals("robot", mensagens.get(1).remetente().emoji().id());
             assertEquals(eventos(c.ana, MENSAGEM), eventos(c.bruno, MENSAGEM));
-            assertTrue(c.carla.recebidos.isEmpty());
+            assertTrue(c.carla.recebidos.stream().allMatch(e -> e.tipo() == ATIVIDADE_SALA));
             assertTrue(c.estudos.buscarUltimas(50).isEmpty());
         }
     }

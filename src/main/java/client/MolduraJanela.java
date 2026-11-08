@@ -39,7 +39,7 @@ final class MolduraJanela extends StackPane {
         fundoLateral.getStyleClass().add("window-side");
         StackPane.setAlignment(fundoLateral, Pos.CENTER_RIGHT);
         painelDireito(0);
-        Label nome = new Label("Conexo");
+        Label nome = new Label(model.Marca.NOME);
         nome.getStyleClass().add("window-title");
         nome.setMinWidth(0);
         nome.setMaxWidth(Double.MAX_VALUE);
