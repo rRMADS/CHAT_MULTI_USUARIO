@@ -5,7 +5,7 @@ import org.kordamp.ikonli.javafx.FontIcon;
 
 /** Ícones vetoriais com tamanho consistente e cores definidas pelo tema. */
 final class Icones {
-    private Icones() { }
+    private Icones() {}
 
     static FontIcon criar(Feather desenho, int tamanho) {
         FontIcon icone = new FontIcon(desenho);

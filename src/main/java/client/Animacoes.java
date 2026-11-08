@@ -1,6 +1,7 @@
 package client;
 
 import animatefx.animation.FadeIn;
+
 import javafx.animation.*;
 import javafx.scene.Node;
 import javafx.scene.Parent;
@@ -8,6 +9,7 @@ import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
+
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map;
@@ -25,8 +27,10 @@ final class Animacoes {
 
     void prepararTela() {
         ativos.forEach(Animation::stop);
-        ativos.clear(); entradas.clear();
-        interacoes.forEach(Animation::stop); interacoes.clear();
+        ativos.clear();
+        entradas.clear();
+        interacoes.forEach(Animation::stop);
+        interacoes.clear();
         if (troca != null) troca.stop();
         troca = null;
     }
@@ -40,27 +44,48 @@ final class Animacoes {
 
     void aparecer(Node node, double x, double y, double atraso) {
         Animation anterior = entradas.remove(node);
-        if (anterior != null) { anterior.stop(); ativos.remove(anterior); }
+        if (anterior != null) {
+            anterior.stop();
+            ativos.remove(anterior);
+        }
         var animacao = entrada(node, x, y, atraso);
         entradas.put(node, animacao);
-        animacao.setOnFinished(e -> { ativos.remove(animacao); entradas.remove(node, animacao); });
-        ativos.add(animacao); animacao.play();
+        animacao.setOnFinished(e -> {
+            ativos.remove(animacao);
+            entradas.remove(node, animacao);
+        });
+        ativos.add(animacao);
+        animacao.play();
     }
 
     void sumir(Node node, Runnable concluido) {
         Animation anterior = entradas.remove(node);
-        if (anterior != null) { anterior.stop(); ativos.remove(anterior); }
-        var fade = new FadeTransition(Duration.millis(130), node); fade.setToValue(0);
-        entradas.put(node, fade); ativos.add(fade);
-        fade.setOnFinished(e -> { ativos.remove(fade); entradas.remove(node, fade); concluido.run(); }); fade.play();
+        if (anterior != null) {
+            anterior.stop();
+            ativos.remove(anterior);
+        }
+        var fade = new FadeTransition(Duration.millis(130), node);
+        fade.setToValue(0);
+        entradas.put(node, fade);
+        ativos.add(fade);
+        fade.setOnFinished(e -> {
+            ativos.remove(fade);
+            entradas.remove(node, fade);
+            concluido.run();
+        });
+        fade.play();
     }
 
     private ParallelTransition entrada(Node node, double x, double y, double atraso) {
         var fade = new FadeIn(node).setSpeed(1000.0 / 190).getTimeline();
         node.setOpacity(0);
         var mover = new TranslateTransition(Duration.millis(250), node);
-        node.setTranslateX(x); node.setTranslateY(y);
-        mover.setFromX(x); mover.setToX(0); mover.setFromY(y); mover.setToY(0);
+        node.setTranslateX(x);
+        node.setTranslateY(y);
+        mover.setFromX(x);
+        mover.setToX(0);
+        mover.setFromY(y);
+        mover.setToY(0);
         mover.setInterpolator(SUAVE);
         var transicao = new ParallelTransition(fade, mover);
         transicao.setDelay(Duration.millis(atraso));
@@ -69,28 +94,62 @@ final class Animacoes {
 
     void flutuar(Node node, double distancia, double segundos, double atraso) {
         var mover = new TranslateTransition(Duration.seconds(segundos), node);
-        mover.setFromY(0); mover.setToY(distancia); mover.setAutoReverse(true);
-        mover.setCycleCount(Animation.INDEFINITE); mover.setInterpolator(Interpolator.EASE_BOTH);
-        mover.setDelay(Duration.millis(atraso)); ativos.add(mover); mover.play();
+        mover.setFromY(0);
+        mover.setToY(distancia);
+        mover.setAutoReverse(true);
+        mover.setCycleCount(Animation.INDEFINITE);
+        mover.setInterpolator(Interpolator.EASE_BOTH);
+        mover.setDelay(Duration.millis(atraso));
+        ativos.add(mover);
+        mover.play();
     }
 
     Animation pulsar(Node node) {
         var fade = new FadeTransition(Duration.seconds(2.2), node);
-        fade.setFromValue(.72); fade.setToValue(1); fade.setAutoReverse(true);
-        fade.setCycleCount(Animation.INDEFINITE); ativos.add(fade); fade.play(); return fade;
+        fade.setFromValue(.72);
+        fade.setToValue(1);
+        fade.setAutoReverse(true);
+        fade.setCycleCount(Animation.INDEFINITE);
+        ativos.add(fade);
+        fade.play();
+        return fade;
     }
 
     void envio(Node icone) {
         Animation anterior = entradas.remove(icone);
-        if (anterior != null) { anterior.stop(); ativos.remove(anterior); }
-        var voo = new Timeline(
-            new KeyFrame(Duration.ZERO, new KeyValue(icone.translateXProperty(), 0), new KeyValue(icone.translateYProperty(), 0), new KeyValue(icone.opacityProperty(), 1)),
-            new KeyFrame(Duration.millis(100), new KeyValue(icone.translateXProperty(), 7), new KeyValue(icone.translateYProperty(), -7), new KeyValue(icone.opacityProperty(), 0)),
-            new KeyFrame(Duration.millis(101), new KeyValue(icone.translateXProperty(), -4), new KeyValue(icone.translateYProperty(), 4), new KeyValue(icone.opacityProperty(), 0)),
-            new KeyFrame(Duration.millis(280), new KeyValue(icone.translateXProperty(), 0, Interpolator.EASE_OUT), new KeyValue(icone.translateYProperty(), 0, Interpolator.EASE_OUT), new KeyValue(icone.opacityProperty(), 1)));
+        if (anterior != null) {
+            anterior.stop();
+            ativos.remove(anterior);
+        }
+        var voo =
+                new Timeline(
+                        new KeyFrame(
+                                Duration.ZERO,
+                                new KeyValue(icone.translateXProperty(), 0),
+                                new KeyValue(icone.translateYProperty(), 0),
+                                new KeyValue(icone.opacityProperty(), 1)),
+                        new KeyFrame(
+                                Duration.millis(100),
+                                new KeyValue(icone.translateXProperty(), 7),
+                                new KeyValue(icone.translateYProperty(), -7),
+                                new KeyValue(icone.opacityProperty(), 0)),
+                        new KeyFrame(
+                                Duration.millis(101),
+                                new KeyValue(icone.translateXProperty(), -4),
+                                new KeyValue(icone.translateYProperty(), 4),
+                                new KeyValue(icone.opacityProperty(), 0)),
+                        new KeyFrame(
+                                Duration.millis(280),
+                                new KeyValue(icone.translateXProperty(), 0, Interpolator.EASE_OUT),
+                                new KeyValue(icone.translateYProperty(), 0, Interpolator.EASE_OUT),
+                                new KeyValue(icone.opacityProperty(), 1)));
         entradas.put(icone, voo);
-        voo.setOnFinished(e -> { ativos.remove(voo); entradas.remove(icone, voo); });
-        ativos.add(voo); voo.play();
+        voo.setOnFinished(e -> {
+            ativos.remove(voo);
+            entradas.remove(icone, voo);
+        });
+        ativos.add(voo);
+        voo.play();
     }
 
     void prepararBotao(Button botao) {
@@ -105,8 +164,10 @@ final class Animacoes {
 
     private void ajustar(Button botao, ScaleTransition escala, double tamanho) {
         escala.stop();
-        escala.setFromX(botao.getScaleX()); escala.setFromY(botao.getScaleY());
-        escala.setToX(tamanho); escala.setToY(tamanho);
+        escala.setFromX(botao.getScaleX());
+        escala.setFromY(botao.getScaleY());
+        escala.setToX(tamanho);
+        escala.setToY(tamanho);
         escala.play();
     }
 }

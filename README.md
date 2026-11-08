@@ -65,7 +65,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Entrada por IP/host e porta; popup com apelido e emoji 3D obrigatório, 48 opções com busca e categorias, prévia com brilho e recusa de apelidos duplicados. O apelido Conexo IA é reservado ao assistente.
 - Apelidos com espaços e acentos, como `João da Silva`, até 30 caracteres. Espaços nas pontas são removidos e espaços repetidos viram um só.
 - Mensagens privadas: clique em uma pessoa na lista ou selecione seu nome no campo de destinatário.
-- Busca no histórico público e recuperação das últimas mensagens.
+- Busca no histórico público e recuperação das últimas mensagens, com leitura em lote de citações e reações para reduzir o trabalho no servidor.
 - Balões de digitação na conversa: nome, avatar e pontos animados para cada pessoa digitando em público na sala atual.
 - Prévia local em um balão que cresce e quebra as linhas conforme você digita; fica visível só para você até enviar. Privadas usam a cor roxa de conversa privada; comandos não geram prévia de mensagem.
 - Tipografia equilibrada: mensagens em 16 px, campos em 15 px, participantes em 14 px e informações auxiliares de 12 a 13 px, com contraste reforçado.
@@ -88,7 +88,7 @@ As mudanças só entram em vigor após reiniciar o servidor. Renomear um identif
 - Conexo IA integrada à Groq, com escolha entre resposta privada e pública na sala; ativação opcional no servidor. Configure a chave uma vez por **ConfigurarIA.cmd** para que seja lembrada ao abrir **Servidor.cmd** pelo Explorador.
 - Respostas da IA em um único cartão, com parágrafos, títulos, negrito, listas, tabelas e código formatados; botão para copiar a resposta completa. O formato também é preservado no histórico público.
 - Copiar endereço do servidor e copiar mensagem pelo botão direito.
-- Heartbeat e recuperação do histórico por reconexão manual após queda.
+- Heartbeat e recuperação automática da conexão e do histórico público após queda.
 - Filas limitadas por cliente para que um destinatário lento não bloqueie o broadcast.
 
 Privadas não ficam no banco e desaparecem ao sair, trocar de sala, reconectar ou recarregar o histórico. Mensagens públicas ficam disponíveis a qualquer participante que entre na respectiva sala deste servidor. As salas são públicas e não têm senha.

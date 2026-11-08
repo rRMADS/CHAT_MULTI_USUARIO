@@ -70,7 +70,7 @@ Se um destinatário privado sair, a seleção permanece privada e avisa que a pe
 4. O repository salva e devolve uma nova instância com ID gerado.
 5. O serviço publica o evento para um snapshot dos participantes.
 6. Cada handler coloca o evento em sua fila; a thread de saída desse cliente escreve no socket.
-7. A thread de rede do cliente recebe o evento; `Platform.runLater` atualiza a interface.
+7. A thread de rede entrega o evento à `FilaInterface`, que preserva a ordem e processa lotes de até 32 callbacks por atualização agendada no JavaFX.
 
 O remetente recebe o evento persistido do próprio servidor, evitando desenhar uma mensagem pública antes da gravação. Isso confirma a aceitação pelo servidor, mas não garante que todos os destinatários a tenham recebido ou lido. Falhas de banco geram erro ao remetente e impedem a publicação.
 
@@ -84,7 +84,7 @@ O remetente recebe o evento persistido do próprio servidor, evitando desenhar u
 | Gravação e publicação | Métodos sincronizados no ChatService, mantendo uma ordem única |
 | Histórico inicial e novas mensagens | Mesmo lock do serviço; histórico enfileirado antes de novas mensagens para a conexão |
 | Escrita no socket de cada cliente | Uma única thread escritora, com fila FIFO limitada a 512 eventos |
-| Conexão JDBC | Uma nova conexão por operação, sem compartilhamento entre threads |
+| Conexão JDBC | Uma conexão por operação; histórico e reações são lidos em lote, sem compartilhar conexões entre threads |
 | Interface | Apenas a thread do JavaFX altera componentes |
 | Encerramento do cliente gráfico | AtomicBoolean permite fechar uma vez e descartar callbacks de sessões anteriores |
 
@@ -135,7 +135,7 @@ A suíte também cobre isolamento entre salas, troca na mesma conexão, contagen
 
 `ClienteGroq` usa Java HttpClient e Gson 2.13.2. Envia somente instrução fixa e pergunta, com a chave exclusivamente no cabeçalho HTTP do servidor. Não segue redirecionamentos, limita o corpo recebido, aplica prazos e traduz erros sem expor credenciais ou respostas brutas de falha. Apenas `FalhaIA`, criada com mensagens públicas deliberadas, pode fornecer detalhes ao cliente. `ConfigIA` lê habilitação/modelo do arquivo e chave de `GROQ_API_KEY`; seu `toString()` oculta a chave.
 
-`IA_DISPONIVEL` informa a configuração ao cliente. `IA_INICIO`, `IA_RESPOSTA` e `IA_ERRO` controlam o popup. A resposta privada vai só ao solicitante; a pública usa mensagens normais persistidas, com remetente reservado Conexo IA e emoji de robô. Respostas públicas são persistidas em uma única operação e transmitidas em um evento MENSAGEM, com o sexto campo `MARKDOWN_IA`. `Mensagem.respostaIA` cria esse formato reservado ao remetente Conexo IA com emoji de robô, aceita até 8.000 caracteres e preserva novas linhas e tabulações. O construtor existente mantém `TEXTO`, uma linha e 500 caracteres para participantes. `comId` preserva o formato. A codificação Base64 dos campos mantém o enquadramento de uma linha no socket mesmo com conteúdo multilinha. O limite de leitura de mensagens do cliente permanece inalterado.
+`IA_DISPONIVEL` informa a configuração ao cliente. `IA_INICIO`, `IA_RESPOSTA` e `IA_ERRO` controlam o popup. A resposta privada vai só ao solicitante; a pública usa mensagens normais persistidas, com remetente reservado Conexo IA e emoji de robô. Respostas públicas são persistidas em uma única operação e transmitidas em um evento MENSAGEM, com o sexto campo `MARKDOWN_IA`. `Mensagem.respostaIA` cria esse formato reservado ao remetente Conexo IA com emoji de robô, aceita até 8.000 caracteres e preserva novas linhas e tabulações. O construtor existente mantém `TEXTO`, uma linha e 500 caracteres para participantes. `comId` preserva o formato. A codificação Base64 dos campos mantém o enquadramento de uma linha no socket mesmo com conteúdo multilinha. `LeitorLinhas` limita eventos recebidos a 262.144 caracteres, com espaço para as cinco mensagens fixadas e Markdown codificados em Base64.
 
 A migração adiciona `formato VARCHAR(20) DEFAULT 'TEXTO' NOT NULL` e amplia `conteudo` para VARCHAR(8000). Histórico e busca reconstroem o tipo correto, sem converter conteúdo antigo nem remover mensagens. Respostas públicas novas são salvas integralmente antes do broadcast, sem cortes no meio de tabelas ou código.
 
@@ -152,7 +152,7 @@ A validação usa uma chave fictícia em uma pasta temporária, incluindo leitur
 
 ## Interações públicas e retomada de sessão
 
-`Mensagem` inclui `Citacao` opcional com ID, autor e resumo de até 180 caracteres. O cliente envia `/responder id texto`; o servidor busca o original pelo ID e sala, constrói a citação e só publica depois do commit. O banco guarda `resposta_id`; a leitura recupera autor e conteúdo da mensagem original, que já é um snapshot da identidade no envio. `MENSAGEM` acrescenta três campos após o formato: ID citado, autor e resumo (vazios sem citação). Privadas não recebem IDs públicos nem controles de reação, citação ou fixação.
+`Mensagem` inclui `Citacao` opcional com ID, autor e resumo abreviado. O cliente envia `/responder id texto`; o servidor busca o original pelo ID e sala, constrói a citação e só publica depois do commit. O banco guarda `resposta_id`; a leitura recupera autor e conteúdo da mensagem original, que já é um snapshot da identidade no envio. `MENSAGEM` acrescenta três campos após o formato: ID citado, autor e resumo (vazios sem citação). Privadas não recebem IDs públicos nem controles de reação, citação ou fixação.
 
 A tabela `reacao` possui chave `(mensagem_id, participante, emoji)` e exclusão em cascata ao apagar a mensagem. A identidade da reação usa o UUID da sessão, preservado nas reconexões e na edição de perfil; clientes legados usam o apelido normalizado. `/reagir` alterna somente a reação do solicitante, com emoji da lista permitida. `REACOES` envia o ID e trios de emoji, contagem e flag de participação do destinatário; o servidor personaliza o evento para cada cliente. O histórico também envia o estado das reações. Novas entradas sem a sessão anterior podem reagir novamente, pois o aplicativo não possui autenticação de contas.
 
@@ -165,3 +165,17 @@ A coluna `fixada` marca mensagens públicas. `/fixar` e `/desfixar` verificam a 
 `ConexaoChat` mantém um canal com socket, fila e thread de saída por tentativa. Ao cair, fecha e descarta o canal inteiro antes de criar outro; nenhuma mensagem pendente é reenviada. O heartbeat só envia quando o handshake foi aceito. A última sala confirmada e o perfil confirmado são usados na retomada. `SalaService` pode substituir uma conexão antiga com o mesmo UUID, encerrando-a antes de admitir a nova; tokens nunca são enviados aos demais participantes. Se a sala tiver sido removida da configuração, usa Geral. A interface preserva rascunho, destinatário privado e citação da mesma sala durante a retomada; histórico público e avisos são recarregados. Mensagens privadas anteriores não são recuperadas do servidor.
 
 `CatalogoComandos` é a fonte compartilhada da ajuda `/help` e de `AjudaComandos`. Digitar `/` abre a lista de comandos de uso público com descrições; prefixos filtram a lista, clique ou ↓/Enter preenche o campo e Esc recolhe. A seleção nunca executa o comando. `/ping` e `/typing` são controles internos da conexão, fora dessa lista.
+
+## Organização e desempenho
+
+`ClienteChat` coordena o ciclo da sessão e as telas. `TelaLogin` concentra o formulário e a ilustração de entrada; `RenderizadorMensagens` monta os balões públicos, privados e os cartões de comandos e IA. `Componentes` compartilha marca, rótulos, botões e cópia de texto. A renderização usa um `DateTimeFormatter` reutilizável e recebe `Mensagem` imutável, sem interpretar diretamente os campos de rede. `MensagensProtocolo` centraliza a codificação e a leitura desse evento nos dois lados.
+
+O JDBC recupera a citação com `LEFT JOIN` na mesma consulta das mensagens, sempre verificando a sala. `carregarReacoes` busca o estado de até 200 mensagens em uma única consulta parametrizada. `EstadoReacoes` copia os conjuntos de participantes e gera as contagens e a marcação de reação própria para cada destinatário. Uma reação publicada usa uma leitura compartilhada para todos os participantes, sem refazer a consulta por pessoa. O contrato `MensagemRepository` exige a implementação dessas operações e não retorna sucessos vazios para funcionalidades ausentes.
+
+Na medição local com 200 mensagens (100 respostas com citação e 600 registros de reação), uma entrada completa caiu de 302 para 3 consultas `SELECT`, mantendo os mesmos 407 eventos entregues ao cliente. A mediana de cinco execuções após duas de aquecimento passou de 20,10 ms para 8,07 ms no banco H2 em memória usado no teste. Esses tempos são uma referência do ambiente de validação, não uma garantia para outros computadores ou bancos em arquivo. Um teste de regressão limita a quantidade de consultas ao carregar 200 mensagens com citações e reações.
+
+`FilaInterface` agrupa os callbacks da conexão em lotes de 32, com um único agendamento pendente. A fila mantém FIFO, recebe eventos de outras threads e libera o agendamento mesmo se um callback falhar. O fechamento descarta callbacks pendentes; verificações de identidade da conexão continuam descartando eventos de sessões anteriores. O cache de perfis é substituído a cada snapshot do servidor, evitando guardar apelidos que já saíram.
+
+Os identificadores de emoji usam um mapa imutável em vez de percorrer os 48 valores a cada mensagem. `Usuario` reutiliza expressões regulares de validação e guarda a forma do nome usada em comparações, mantendo as mesmas regras de apelido e unicidade. Selecionar novamente o tema atual não reaplica todo o CSS nem regrava a preferência. `LeitorLinhas` compartilha a leitura limitada entre cliente e servidor.
+
+Os fontes Java e os testes usam formatação consistente com quatro espaços, imports ordenados e imports não utilizados removidos. O ajuste foi feito com [google-java-format 2.0.0](https://github.com/google/google-java-format/releases/tag/v2.0.0), estilo AOSP, sem adicionar dependências de execução. A compilação com `--release 17 -Xlint:all` e os testes automatizados verificam o código revisado.

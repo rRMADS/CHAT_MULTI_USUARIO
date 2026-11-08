@@ -21,27 +21,54 @@ final class BalaoRascunho extends Region {
     private boolean ativo;
 
     BalaoRascunho() {
-        setId("previa-rascunho"); getStyleClass().add("draft-preview");
-        titulo.getStyleClass().add("message-author"); titulo.setWrapText(true);
-        corpo.getStyleClass().add("message-body"); corpo.setWrapText(true); corpo.setMinWidth(0);
-        dica.getStyleClass().add("draft-caption"); dica.setWrapText(true);
-        bolha.getStyleClass().addAll("bubble-own", "draft-bubble"); bolha.setAlignment(Pos.TOP_LEFT);
-        bolha.setManaged(false); getChildren().add(bolha);
-        Rectangle recorte = new Rectangle(); recorte.widthProperty().bind(widthProperty()); recorte.heightProperty().bind(heightProperty()); setClip(recorte);
+        setId("previa-rascunho");
+        getStyleClass().add("draft-preview");
+        titulo.getStyleClass().add("message-author");
+        titulo.setWrapText(true);
+        corpo.getStyleClass().add("message-body");
+        corpo.setWrapText(true);
+        corpo.setMinWidth(0);
+        dica.getStyleClass().add("draft-caption");
+        dica.setWrapText(true);
+        bolha.getStyleClass().addAll("bubble-own", "draft-bubble");
+        bolha.setAlignment(Pos.TOP_LEFT);
+        bolha.setManaged(false);
+        getChildren().add(bolha);
+        Rectangle recorte = new Rectangle();
+        recorte.widthProperty().bind(widthProperty());
+        recorte.heightProperty().bind(heightProperty());
+        setClip(recorte);
         largura.addListener((obs, antes, depois) -> requestLayout());
-        widthProperty().addListener((obs, antes, depois) -> { if (ativo) dimensionar(); });
-        setMinHeight(USE_PREF_SIZE); setMaxHeight(USE_PREF_SIZE); limpar();
+        widthProperty()
+                .addListener((obs, antes, depois) -> {
+                    if (ativo) dimensionar();
+                });
+        setMinHeight(USE_PREF_SIZE);
+        setMaxHeight(USE_PREF_SIZE);
+        limpar();
     }
 
     void atualizar(String texto, String destinatario, boolean permitido) {
         boolean mostrar = permitido && !texto.isBlank() && !texto.stripLeading().startsWith("/");
-        if (!mostrar) { ocultar(); return; }
-        boolean nova = !ativo; ativo = true;
-        titulo.setText("Todos".equals(destinatario) ? "Você · rascunho" : "Você · rascunho para " + destinatario);
+        if (!mostrar) {
+            ocultar();
+            return;
+        }
+        boolean nova = !ativo;
+        ativo = true;
+        titulo.setText(
+                "Todos".equals(destinatario)
+                        ? "Você · rascunho"
+                        : "Você · rascunho para " + destinatario);
         corpo.setText(texto);
         bolha.getStyleClass().remove("bubble-private");
         if (!"Todos".equals(destinatario)) bolha.getStyleClass().add("bubble-private");
-        if (nova) { setManaged(true); setVisible(true); setOpacity(0); setTranslateY(6); }
+        if (nova) {
+            setManaged(true);
+            setVisible(true);
+            setOpacity(0);
+            setTranslateY(6);
+        }
         dimensionar();
     }
 
@@ -51,11 +78,14 @@ final class BalaoRascunho extends Region {
         double limite = Math.max(180, Math.min(620, getWidth() > 0 ? getWidth() : 620));
         double destino = Math.min(limite, Math.max(285, corpo.prefWidth(-1) + 40));
         double altura = bolha.prefHeight(destino);
-        ajuste = new Timeline(new KeyFrame(Duration.millis(150),
-                new KeyValue(largura, destino, Animacoes.SUAVE),
-                new KeyValue(prefHeightProperty(), altura, Animacoes.SUAVE),
-                new KeyValue(opacityProperty(), 1, Animacoes.SUAVE),
-                new KeyValue(translateYProperty(), 0, Animacoes.SUAVE)));
+        ajuste =
+                new Timeline(
+                        new KeyFrame(
+                                Duration.millis(150),
+                                new KeyValue(largura, destino, Animacoes.SUAVE),
+                                new KeyValue(prefHeightProperty(), altura, Animacoes.SUAVE),
+                                new KeyValue(opacityProperty(), 1, Animacoes.SUAVE),
+                                new KeyValue(translateYProperty(), 0, Animacoes.SUAVE)));
         ajuste.play();
     }
 
@@ -63,22 +93,47 @@ final class BalaoRascunho extends Region {
         if (!ativo) return;
         ativo = false;
         if (ajuste != null) ajuste.stop();
-        ajuste = new Timeline(new KeyFrame(Duration.millis(120),
-                new KeyValue(prefHeightProperty(), 0, Animacoes.SUAVE), new KeyValue(opacityProperty(), 0)));
-        ajuste.setOnFinished(e -> { setManaged(false); setVisible(false); corpo.setText(""); }); ajuste.play();
+        ajuste =
+                new Timeline(
+                        new KeyFrame(
+                                Duration.millis(120),
+                                new KeyValue(prefHeightProperty(), 0, Animacoes.SUAVE),
+                                new KeyValue(opacityProperty(), 0)));
+        ajuste.setOnFinished(e -> {
+            setManaged(false);
+            setVisible(false);
+            corpo.setText("");
+        });
+        ajuste.play();
     }
 
     void limpar() {
-        ativo = false; if (ajuste != null) ajuste.stop();
-        corpo.setText(""); setManaged(false); setVisible(false); setPrefHeight(0); setOpacity(0);
+        ativo = false;
+        if (ajuste != null) ajuste.stop();
+        corpo.setText("");
+        setManaged(false);
+        setVisible(false);
+        setPrefHeight(0);
+        setOpacity(0);
     }
 
-    void parar() { if (ajuste != null) ajuste.stop(); }
+    void parar() {
+        if (ajuste != null) ajuste.stop();
+    }
 
-    @Override protected void layoutChildren() {
+    @Override
+    protected void layoutChildren() {
         double w = Math.min(getWidth(), largura.get());
-        bolha.resizeRelocate(getWidth()-w, 0, w, bolha.prefHeight(w));
+        bolha.resizeRelocate(getWidth() - w, 0, w, bolha.prefHeight(w));
     }
-    @Override protected double computeMinWidth(double height) { return 0; }
-    @Override protected double computePrefWidth(double height) { return 620; }
+
+    @Override
+    protected double computeMinWidth(double height) {
+        return 0;
+    }
+
+    @Override
+    protected double computePrefWidth(double height) {
+        return 620;
+    }
 }

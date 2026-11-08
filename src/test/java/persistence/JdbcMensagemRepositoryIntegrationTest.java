@@ -1,104 +1,305 @@
 package persistence;
+
+import static org.junit.jupiter.api.Assertions.*;
+
 import model.*;
-import persistence.jdbc.*;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+
+import persistence.jdbc.*;
+
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.UUID;
-import static org.junit.jupiter.api.Assertions.*;
+
 class JdbcMensagemRepositoryIntegrationTest {
     @TempDir Path pasta;
-    private JdbcMensagemRepository criar(String url) { var r = new JdbcMensagemRepository(new ConnectionFactory(url, "sa", "")); r.inicializar(); return r; }
-    private Mensagem mensagem(String t) { return new Mensagem(null, new Usuario("Ana"), t, LocalDateTime.of(2026, 11, 4, 12, 30)); }
-    @Test void ultimasMensagensVemEmOrdemCronologicaComIdsGerados() {
-        var r = criar("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
-        r.salvar(mensagem("a")); r.salvar(mensagem("b")); r.salvar(mensagem("c"));
-        var ultimas = r.buscarUltimas(2); assertEquals(java.util.List.of("b", "c"), ultimas.stream().map(Mensagem::conteudo).toList()); assertTrue(ultimas.get(1).id() > ultimas.get(0).id());
+
+    private JdbcMensagemRepository criar(String url) {
+        var r = new JdbcMensagemRepository(new ConnectionFactory(url, "sa", ""));
+        r.inicializar();
+        return r;
     }
-    @Test void buscaTrataAspasECuringasComoTextoLiteral() {
-        var r = criar("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
-        r.salvar(mensagem("100% de atenção")); r.salvar(mensagem("O'Brien")); r.salvar(mensagem("outra"));
-        assertEquals(1, r.buscarPorTexto("%", 10).size()); assertEquals(1, r.buscarPorTexto("o'brien", 10).size()); assertTrue(r.buscarPorTexto("' OR 1=1 --", 10).isEmpty());
+
+    private Mensagem mensagem(String t) {
+        return new Mensagem(null, new Usuario("Ana"), t, LocalDateTime.of(2026, 11, 4, 12, 30));
     }
-    @Test void historicoSobreviveANovaInstanciaDoRepository() {
+
+    @Test
+    void ultimasMensagensVemEmOrdemCronologicaComIdsGerados() {
+        var r = criar("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        r.salvar(mensagem("a"));
+        r.salvar(mensagem("b"));
+        r.salvar(mensagem("c"));
+        var ultimas = r.buscarUltimas(2);
+        assertEquals(
+                java.util.List.of("b", "c"), ultimas.stream().map(Mensagem::conteudo).toList());
+        assertTrue(ultimas.get(1).id() > ultimas.get(0).id());
+    }
+
+    @Test
+    void buscaTrataAspasECuringasComoTextoLiteral() {
+        var r = criar("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
+        r.salvar(mensagem("100% de atenção"));
+        r.salvar(mensagem("O'Brien"));
+        r.salvar(mensagem("outra"));
+        assertEquals(1, r.buscarPorTexto("%", 10).size());
+        assertEquals(1, r.buscarPorTexto("o'brien", 10).size());
+        assertTrue(r.buscarPorTexto("' OR 1=1 --", 10).isEmpty());
+    }
+
+    @Test
+    void historicoSobreviveANovaInstanciaDoRepository() {
         String url = "jdbc:h2:" + pasta.resolve("chat").toAbsolutePath();
-        criar(url).salvar(mensagem("Persistente")); assertEquals("Persistente", criar(url).buscarUltimas(1).get(0).conteudo());
+        criar(url).salvar(mensagem("Persistente"));
+        assertEquals("Persistente", criar(url).buscarUltimas(1).get(0).conteudo());
     }
-    @Test void historicoEBuscaFiltramPorSalaNoMesmoBanco() {
-        var factory = new ConnectionFactory("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "");
-        var geral = new JdbcMensagemRepository(factory); geral.inicializar();
+
+    @Test
+    void historicoEBuscaFiltramPorSalaNoMesmoBanco() {
+        var factory =
+                new ConnectionFactory(
+                        "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "");
+        var geral = new JdbcMensagemRepository(factory);
+        geral.inicializar();
         var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos"));
-        geral.salvar(mensagem("Olá Geral")); estudos.salvar(mensagem("Olá Estudos"));
+        geral.salvar(mensagem("Olá Geral"));
+        estudos.salvar(mensagem("Olá Estudos"));
         assertEquals("Olá Geral", geral.buscarUltimas(10).get(0).conteudo());
         assertEquals("Olá Estudos", estudos.buscarUltimas(10).get(0).conteudo());
-        assertTrue(geral.buscarPorTexto("Estudos", 10).isEmpty()); assertTrue(estudos.buscarPorTexto("Geral", 10).isEmpty());
+        assertTrue(geral.buscarPorTexto("Estudos", 10).isEmpty());
+        assertTrue(estudos.buscarPorTexto("Geral", 10).isEmpty());
     }
-    @Test void migracaoPreservaHistoricoAntigoNaSalaGeral() throws Exception {
-        var factory = new ConnectionFactory("jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "");
-        try (var c = factory.abrir(); var s = c.createStatement()) {
-            s.execute("CREATE TABLE mensagem (id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY, remetente VARCHAR(30) NOT NULL, conteudo VARCHAR(500) NOT NULL, horario TIMESTAMP NOT NULL)");
-            s.execute("INSERT INTO mensagem(remetente, conteudo, horario) VALUES ('Ana', 'Mensagem antiga', TIMESTAMP '2026-11-04 12:30:00')");
+
+    @Test
+    void migracaoPreservaHistoricoAntigoNaSalaGeral() throws Exception {
+        var factory =
+                new ConnectionFactory(
+                        "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1", "sa", "");
+        try (var c = factory.abrir();
+                var s = c.createStatement()) {
+            s.execute(
+                    "CREATE TABLE mensagem (id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY, remetente VARCHAR(30) NOT NULL, conteudo VARCHAR(500) NOT NULL, horario TIMESTAMP NOT NULL)");
+            s.execute(
+                    "INSERT INTO mensagem(remetente, conteudo, horario) VALUES ('Ana', 'Mensagem antiga', TIMESTAMP '2026-11-04 12:30:00')");
         }
-        var geral = new JdbcMensagemRepository(factory); geral.inicializar(); geral.inicializar();
+        var geral = new JdbcMensagemRepository(factory);
+        geral.inicializar();
+        geral.inicializar();
         assertEquals("Mensagem antiga", geral.buscarUltimas(10).get(0).conteudo());
-        assertEquals(EmojiIdentificacao.SMILE,geral.buscarUltimas(10).get(0).remetente().emoji());
-        assertEquals(FormatoMensagem.TEXTO,geral.buscarUltimas(10).get(0).formato());
-        String markdown="## Depois da migração\n\n"+"Uma resposta longa. ".repeat(100);
-        geral.salvar(Mensagem.respostaIA(markdown,LocalDateTime.now()));
-        assertEquals(markdown.strip(),geral.buscarUltimas(1).get(0).conteudo()); assertEquals(FormatoMensagem.MARKDOWN_IA,geral.buscarUltimas(1).get(0).formato());
-        var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos")); assertTrue(estudos.buscarUltimas(10).isEmpty());
-    }
-    @Test void limpezaPersisteNoArquivoRespeitaSalaENaoReutilizaIds() {
-        String url = "jdbc:h2:" + pasta.resolve("limpeza").toAbsolutePath();
-        var factory = new ConnectionFactory(url, "sa", ""); var geral = new JdbcMensagemRepository(factory); geral.inicializar();
+        assertEquals(EmojiIdentificacao.SMILE, geral.buscarUltimas(10).get(0).remetente().emoji());
+        assertEquals(FormatoMensagem.TEXTO, geral.buscarUltimas(10).get(0).formato());
+        String markdown = "## Depois da migração\n\n" + "Uma resposta longa. ".repeat(100);
+        geral.salvar(Mensagem.respostaIA(markdown, LocalDateTime.now()));
+        assertEquals(markdown.strip(), geral.buscarUltimas(1).get(0).conteudo());
+        assertEquals(FormatoMensagem.MARKDOWN_IA, geral.buscarUltimas(1).get(0).formato());
         var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos"));
-        var antiga = geral.salvar(mensagem("Texto da Geral")); estudos.salvar(mensagem("Texto dos Estudos"));
-        assertEquals(1, geral.limpar()); assertEquals(0, geral.limpar());
-        assertTrue(geral.buscarUltimas(50).isEmpty()); assertTrue(geral.buscarPorTexto("Geral",50).isEmpty());
+        assertTrue(estudos.buscarUltimas(10).isEmpty());
+    }
+
+    @Test
+    void limpezaPersisteNoArquivoRespeitaSalaENaoReutilizaIds() {
+        String url = "jdbc:h2:" + pasta.resolve("limpeza").toAbsolutePath();
+        var factory = new ConnectionFactory(url, "sa", "");
+        var geral = new JdbcMensagemRepository(factory);
+        geral.inicializar();
+        var estudos = new JdbcMensagemRepository(factory, new Sala("estudos", "Estudos"));
+        var antiga = geral.salvar(mensagem("Texto da Geral"));
+        estudos.salvar(mensagem("Texto dos Estudos"));
+        assertEquals(1, geral.limpar());
+        assertEquals(0, geral.limpar());
+        assertTrue(geral.buscarUltimas(50).isEmpty());
+        assertTrue(geral.buscarPorTexto("Geral", 50).isEmpty());
         assertTrue(criar(url).buscarUltimas(50).isEmpty());
         assertEquals("Texto dos Estudos", estudos.buscarUltimas(50).get(0).conteudo());
         assertTrue(geral.salvar(mensagem("Nova mensagem")).id() > antiga.id());
     }
-    @Test void emojiEscolhidoSobreviveAReaberturaDoBanco() {
-        String url="jdbc:h2:"+pasta.resolve("emoji").toAbsolutePath();
-        criar(url).salvar(new Mensagem(null,new Usuario("Ana Silva","unicorn"),"Olá",LocalDateTime.now()));
-        assertEquals(EmojiIdentificacao.UNICORN,criar(url).buscarUltimas(1).get(0).remetente().emoji());
+
+    @Test
+    void emojiEscolhidoSobreviveAReaberturaDoBanco() {
+        String url = "jdbc:h2:" + pasta.resolve("emoji").toAbsolutePath();
+        criar(url)
+                .salvar(
+                        new Mensagem(
+                                null,
+                                new Usuario("Ana Silva", "unicorn"),
+                                "Olá",
+                                LocalDateTime.now()));
+        assertEquals(
+                EmojiIdentificacao.UNICORN, criar(url).buscarUltimas(1).get(0).remetente().emoji());
     }
-    @Test void novosEmojisTambemSaoPreservadosNoHistorico() {
-        String url="jdbc:h2:"+pasta.resolve("novos-emojis").toAbsolutePath();
-        var r=criar(url);
-        for(var emoji:java.util.List.of(EmojiIdentificacao.PARTY,EmojiIdentificacao.DRAGON,EmojiIdentificacao.GAME,EmojiIdentificacao.HEART))
-            r.salvar(new Mensagem(null,new Usuario("Ana Silva",emoji.id()),"Olá com "+emoji.nome(),LocalDateTime.now()));
-        assertEquals(java.util.List.of("party","dragon","game","heart"),criar(url).buscarUltimas(10).stream().map(m->m.remetente().emoji().id()).toList());
+
+    @Test
+    void novosEmojisTambemSaoPreservadosNoHistorico() {
+        String url = "jdbc:h2:" + pasta.resolve("novos-emojis").toAbsolutePath();
+        var r = criar(url);
+        for (var emoji :
+                java.util.List.of(
+                        EmojiIdentificacao.PARTY,
+                        EmojiIdentificacao.DRAGON,
+                        EmojiIdentificacao.GAME,
+                        EmojiIdentificacao.HEART))
+            r.salvar(
+                    new Mensagem(
+                            null,
+                            new Usuario("Ana Silva", emoji.id()),
+                            "Olá com " + emoji.nome(),
+                            LocalDateTime.now()));
+        assertEquals(
+                java.util.List.of("party", "dragon", "game", "heart"),
+                criar(url).buscarUltimas(10).stream()
+                        .map(m -> m.remetente().emoji().id())
+                        .toList());
     }
-    @Test void markdownSobreviveAReaberturaComoUmaUnicaMensagem() {
-        String url="jdbc:h2:"+pasta.resolve("markdown").toAbsolutePath();
-        String texto="## Receita\n\n1. **Leve à geladeira**\n2. Sirva.\n\n| Sugestão | Como fazer |\n| --- | --- |\n| Chocolate | Derreta e espalhe. |\n\n```java\n\tSystem.out.println(\"Olá\");\n```\n\n"+"Detalhes. ".repeat(100);
-        criar(url).salvar(Mensagem.respostaIA(texto,LocalDateTime.now()));
-        var mensagens=criar(url).buscarUltimas(50); assertEquals(1,mensagens.size()); assertEquals(texto.strip(),mensagens.get(0).conteudo()); assertEquals(FormatoMensagem.MARKDOWN_IA,mensagens.get(0).formato());
-        assertEquals(texto.strip(),criar(url).buscarPorTexto("geladeira",10).get(0).conteudo());
+
+    @Test
+    void markdownSobreviveAReaberturaComoUmaUnicaMensagem() {
+        String url = "jdbc:h2:" + pasta.resolve("markdown").toAbsolutePath();
+        String texto =
+                "## Receita\n\n1. **Leve à geladeira**\n2. Sirva.\n\n| Sugestão | Como fazer |\n| --- | --- |\n| Chocolate | Derreta e espalhe. |\n\n```java\n\tSystem.out.println(\"Olá\");\n```\n\n"
+                        + "Detalhes. ".repeat(100);
+        criar(url).salvar(Mensagem.respostaIA(texto, LocalDateTime.now()));
+        var mensagens = criar(url).buscarUltimas(50);
+        assertEquals(1, mensagens.size());
+        assertEquals(texto.strip(), mensagens.get(0).conteudo());
+        assertEquals(FormatoMensagem.MARKDOWN_IA, mensagens.get(0).formato());
+        assertEquals(texto.strip(), criar(url).buscarPorTexto("geladeira", 10).get(0).conteudo());
     }
-    @Test void citacoesReacoesEFixadasSobrevivemAReaberturaSemVazarEntreSalas() {
-        String url="jdbc:h2:"+pasta.resolve("interacoes").toAbsolutePath(); var r=criar(url);
-        var original=r.salvar(mensagem("Original "+"detalhes ".repeat(45)));
-        var resposta=r.salvar(new Mensagem(null,new Usuario("Bruno","heart"),"Minha resposta",LocalDateTime.now(),FormatoMensagem.TEXTO,Citacao.de(original)));
-        r.alternarReacao(original.id(),"sessao-ana","💜"); r.alternarReacao(original.id(),"sessao-bruno","💜"); r.fixar(original.id(),true);
-        var aberto=criar(url); assertEquals(resposta.citacao(),aberto.buscarPorId(resposta.id()).orElseThrow().citacao());
-        assertEquals(java.util.List.of(new Reacao("💜",2,true)),aberto.reacoes(original.id(),"sessao-ana")); assertEquals(original.id(),aberto.fixadas().get(0).id());
-        var outro=new JdbcMensagemRepository(new ConnectionFactory(url,"sa",""),new Sala("estudos","Estudos"));
-        assertTrue(outro.buscarPorId(original.id()).isEmpty()); assertTrue(outro.fixadas().isEmpty()); assertTrue(outro.reacoes(original.id(),"sessao-ana").isEmpty());
-        assertThrows(IllegalArgumentException.class,()->outro.fixar(original.id(),true)); assertThrows(IllegalArgumentException.class,()->outro.alternarReacao(original.id(),"sessao-ana","👍"));
-        assertEquals(2,aberto.limpar()); assertTrue(aberto.reacoes(original.id(),"sessao-ana").isEmpty()); assertTrue(aberto.fixadas().isEmpty());
+
+    @Test
+    void citacoesReacoesEFixadasSobrevivemAReaberturaSemVazarEntreSalas() {
+        String url = "jdbc:h2:" + pasta.resolve("interacoes").toAbsolutePath();
+        var r = criar(url);
+        var original = r.salvar(mensagem("Original " + "detalhes ".repeat(45)));
+        var resposta =
+                r.salvar(
+                        new Mensagem(
+                                null,
+                                new Usuario("Bruno", "heart"),
+                                "Minha resposta",
+                                LocalDateTime.now(),
+                                FormatoMensagem.TEXTO,
+                                Citacao.de(original)));
+        r.alternarReacao(original.id(), "sessao-ana", "💜");
+        r.alternarReacao(original.id(), "sessao-bruno", "💜");
+        r.fixar(original.id(), true);
+        var aberto = criar(url);
+        assertEquals(resposta.citacao(), aberto.buscarPorId(resposta.id()).orElseThrow().citacao());
+        assertEquals(
+                java.util.List.of(new Reacao("💜", 2, true)),
+                aberto.reacoes(original.id(), "sessao-ana"));
+        assertEquals(original.id(), aberto.fixadas().get(0).id());
+        var outro =
+                new JdbcMensagemRepository(
+                        new ConnectionFactory(url, "sa", ""), new Sala("estudos", "Estudos"));
+        assertTrue(outro.buscarPorId(original.id()).isEmpty());
+        assertTrue(outro.fixadas().isEmpty());
+        assertTrue(outro.reacoes(original.id(), "sessao-ana").isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> outro.fixar(original.id(), true));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> outro.alternarReacao(original.id(), "sessao-ana", "👍"));
+        assertEquals(2, aberto.limpar());
+        assertTrue(aberto.reacoes(original.id(), "sessao-ana").isEmpty());
+        assertTrue(aberto.fixadas().isEmpty());
     }
-    @Test void migracaoMantemMensagemAntigaEAdicionaInteracoes() throws Exception {
-        String url="jdbc:h2:mem:"+UUID.randomUUID()+";DB_CLOSE_DELAY=-1"; var f=new ConnectionFactory(url,"sa","");
-        try(var c=f.abrir();var q=c.createStatement()) {
-            q.execute("CREATE TABLE mensagem(id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,remetente VARCHAR(30),conteudo VARCHAR(500),horario TIMESTAMP)");
-            q.execute("INSERT INTO mensagem(remetente,conteudo,horario) VALUES('Ana','Anterior',CURRENT_TIMESTAMP)");
+
+    @Test
+    void migracaoMantemMensagemAntigaEAdicionaInteracoes() throws Exception {
+        String url = "jdbc:h2:mem:" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1";
+        var f = new ConnectionFactory(url, "sa", "");
+        try (var c = f.abrir();
+                var q = c.createStatement()) {
+            q.execute(
+                    "CREATE TABLE mensagem(id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,remetente VARCHAR(30),conteudo VARCHAR(500),horario TIMESTAMP)");
+            q.execute(
+                    "INSERT INTO mensagem(remetente,conteudo,horario) VALUES('Ana','Anterior',CURRENT_TIMESTAMP)");
         }
-        var r=new JdbcMensagemRepository(f); r.inicializar(); r.inicializar(); var m=r.buscarUltimas(1).get(0);
-        assertEquals("Anterior",m.conteudo()); assertNull(m.citacao()); r.fixar(m.id(),true); r.alternarReacao(m.id(),"sessao","👍");
-        assertEquals(1,r.fixadas().size()); assertEquals(1,r.reacoes(m.id(),"sessao").size());
+        var r = new JdbcMensagemRepository(f);
+        r.inicializar();
+        r.inicializar();
+        var m = r.buscarUltimas(1).get(0);
+        assertEquals("Anterior", m.conteudo());
+        assertNull(m.citacao());
+        r.fixar(m.id(), true);
+        r.alternarReacao(m.id(), "sessao", "👍");
+        assertEquals(1, r.fixadas().size());
+        assertEquals(1, r.reacoes(m.id(), "sessao").size());
+    }
+
+    @Test
+    void historicoComCitacoesEReacoesNaoMultiplicaConsultasPorMensagem() throws Exception {
+        String url =
+                "jdbc:h2:mem:"
+                        + UUID.randomUUID()
+                        + ";DB_CLOSE_DELAY=-1;QUERY_STATISTICS=TRUE;QUERY_STATISTICS_MAX_ENTRIES=1000";
+        var f = new ConnectionFactory(url, "sa", "");
+        var r = new JdbcMensagemRepository(f);
+        r.inicializar();
+        try (var c = f.abrir();
+                var inserir =
+                        c.prepareStatement(
+                                "INSERT INTO mensagem(remetente,conteudo,horario,resposta_id) VALUES('Ana',?,CURRENT_TIMESTAMP,?)")) {
+            for (int i = 0; i < 200; i++) {
+                inserir.setString(1, "Mensagem " + i);
+                if (i % 2 == 1) inserir.setLong(2, 1);
+                else inserir.setNull(2, java.sql.Types.BIGINT);
+                inserir.addBatch();
+            }
+            inserir.executeBatch();
+            try (var reacao = c.prepareStatement("INSERT INTO reacao VALUES(?,?,?)")) {
+                for (int i = 1; i <= 200; i++) {
+                    reacao.setInt(1, i);
+                    reacao.setString(2, "sessao");
+                    reacao.setString(3, "💜");
+                    reacao.addBatch();
+                }
+                reacao.executeBatch();
+            }
+            try (var sql = c.createStatement()) {
+                sql.execute("SET QUERY_STATISTICS FALSE");
+                sql.execute("SET QUERY_STATISTICS TRUE");
+                var chat =
+                        new service.ChatService(
+                                r, new service.ClientRegistry(), java.time.Clock.systemUTC(), 200);
+                var cliente = new support.FakeConexao("Teste");
+                chat.conectar(cliente);
+                int consultas = 0;
+                try (var estatisticas =
+                        sql.executeQuery(
+                                "SELECT SQL_STATEMENT,EXECUTION_COUNT FROM INFORMATION_SCHEMA.QUERY_STATISTICS")) {
+                    while (estatisticas.next())
+                        if (estatisticas
+                                .getString(1)
+                                .stripLeading()
+                                .toUpperCase(java.util.Locale.ROOT)
+                                .startsWith("SELECT ")) consultas += estatisticas.getInt(2);
+                }
+                assertTrue(
+                        consultas <= 4,
+                        "O histórico deve ser carregado em lote, sem consultas por mensagem: "
+                                + consultas);
+                assertEquals(
+                        200,
+                        cliente.recebidos.stream()
+                                .filter(e -> e.tipo() == protocol.Evento.Tipo.MENSAGEM)
+                                .count());
+                assertEquals(
+                        200,
+                        cliente.recebidos.stream()
+                                .filter(e ->
+                                        e.tipo() == protocol.Evento.Tipo.REACOES
+                                                && e.campos().size() == 4)
+                                .count());
+                assertEquals(
+                        100,
+                        cliente.recebidos.stream()
+                                .filter(e ->
+                                        e.tipo() == protocol.Evento.Tipo.MENSAGEM
+                                                && !e.campo(6).isEmpty())
+                                .count());
+            }
+        }
     }
 }
