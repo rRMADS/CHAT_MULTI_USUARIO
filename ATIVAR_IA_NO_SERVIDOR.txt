@@ -1,0 +1,65 @@
+ORKUT 2.0 — COMO ATIVAR A IA EM OUTRO COMPUTADOR (WINDOWS)
+
+1. Prepare o computador que vai hospedar o chat
+
+   - Instale um JDK 17 ou superior (recomendado JDK 21). Para conferir a
+     instalação, execute javac -version no Prompt de Comando. Se o comando
+     não for encontrado, coloque a pasta bin do JDK no PATH ou configure
+     JAVA_HOME com o caminho para a pasta do JDK.
+   - Abra https://github.com/rRMADS/CHAT_MULTI_USUARIO e clique em
+     Code > Download ZIP. Extraia tudo em uma pasta onde você pode salvar
+     arquivos, por exemplo, Documentos\Orkut2.0.
+   - Use internet na primeira execução para baixar as dependências. Mantenha
+     o servidor com acesso à internet para consultar a Groq.
+
+2. Gere uma chave da Groq
+
+   - Acesse https://console.groq.com/keys e entre na sua conta.
+   - Clique em Create API Key, dê um nome (por exemplo, Orkut 2.0) e copie
+     a chave gerada. Se o botão estiver indisponível, selecione um projeto
+     em que sua conta tenha permissão para criar chaves.
+   - Guarde a chave em sigilo. Use-a apenas no computador servidor e evite
+     colá-la no chat, no GitHub ou em chat.properties.
+
+3. Salve a chave no novo servidor
+
+   - Na pasta extraída, dê dois cliques em ConfigurarIA.cmd.
+   - Quando aparecer «Chave da Groq», cole a chave completa e pressione
+     Enter. Os caracteres ficam ocultos enquanto você cola ou digita.
+   - Aguarde a confirmação de que a chave foi salva e a IA foi habilitada.
+     O configurador grava ai.enabled=true em chat.properties e protege
+     a chave com a conta atual do Windows. O arquivo de chave de outro
+     computador deve ser substituído por uma configuração feita nesta máquina.
+   - Nas próximas vezes, abra Servidor.cmd pela mesma conta do Windows e
+     na mesma pasta do projeto. A chave salva será carregada automaticamente.
+
+4. Abra o servidor e faça um teste
+
+   - Se houver um servidor antigo aberto, pressione Ctrl+C na janela dele.
+     Abra Servidor.cmd da pasta nova e mantenha a janela aberta.
+   - Procure a mensagem «Orkut IA: Groq ativada». Ela confirma que a chave
+     foi carregada. Uma resposta no chat confirma que a Groq aceitou a chave.
+   - Abra Cliente.cmd da mesma versão. No próprio servidor, use o endereço
+     127.0.0.1 e a porta 5050, se não foi alterada. Em outro computador na
+     mesma rede, use o IPv4 e a porta mostrados na janela do servidor.
+   - Escolha seu apelido e emoji, conecte e clique em IA. Selecione
+     «Privado · só você» e envie «Responda apenas: teste concluído».
+     Escolha «Na sala» quando quiser publicar a pergunta e a resposta.
+     A chave é configurada somente no servidor.
+
+5. Se a IA não responder
+
+   - «IA ainda não foi ativada»: execute ConfigurarIA.cmd na pasta e na
+     conta do Windows usadas para abrir Servidor.cmd. Reinicie o servidor
+     e reconecte o cliente. Confira se chat.properties tem ai.enabled=true.
+   - Erro de autenticação: confirme se a chave está ativa no console da Groq.
+     Se precisar substituí-la, gere outra, execute ConfigurarIA.cmd com a
+     nova chave e reinicie o servidor.
+   - Erro de limite: aguarde e tente novamente. Se o serviço estiver
+     indisponível, confira a conexão com a internet no servidor.
+
+Para a apresentação, teste uma pergunta na máquina que será usada antes de
+começar. Se o computador for emprestado e a chave tiver sido criada para a
+demonstração, revogue-a no console da Groq ao terminar.
+
+Guia oficial da Groq: https://console.groq.com/docs/quickstart
